@@ -151,9 +151,20 @@ export function formatLabel(fieldName) {
 }
 
 export function buildRows(properties, options = {}) {
-  const omit = new Set(options.omit || []);
+  const normalize = (value) => String(value || "").toLowerCase();
+  const omit = new Set((options.omit || []).map(normalize));
+  const allow = options.allow ? new Set(options.allow.map(normalize)) : null;
+  const seen = new Set();
   return Object.entries(properties || {})
-    .filter(([key, value]) => !omit.has(key) && value != null && value !== "")
+    .filter(([key, value]) => {
+      const normalizedKey = normalize(key);
+      if (omit.has(normalizedKey)) return false;
+      if (allow && !allow.has(normalizedKey)) return false;
+      if (seen.has(normalizedKey)) return false;
+      if (value == null || value === "") return false;
+      seen.add(normalizedKey);
+      return true;
+    })
     .map(([key, value]) => ({
       label: formatLabel(key),
       value: formatValue(key, value),

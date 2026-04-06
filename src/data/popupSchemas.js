@@ -9,6 +9,7 @@ import {
   renderSectionSubtitle,
   renderSectionTitle,
 } from "./fieldFormatters";
+import { getLegacyPopupFields } from "./legacyPopupFields";
 
 function getProp(properties, ...keys) {
   for (const key of keys) {
@@ -92,6 +93,7 @@ function renderPachucaEtapas(properties) {
 }
 
 function renderPmduGeneric(properties, layerDef) {
+  const allow = getLegacyPopupFields(layerDef);
   const title = firstDefined(
     getProp(properties, "ZonSec", "zonsec"),
     getProp(properties, "ZonSec2022", "zonsec2022"),
@@ -103,6 +105,7 @@ function renderPmduGeneric(properties, layerDef) {
   );
 
   const rows = buildRows(properties, {
+    allow,
     omit: [
       "ZonSec",
       "ZonSec2022",

@@ -2,6 +2,7 @@
 import L from "leaflet";
 import { getLegendStyle } from "./simbologia";
 import { GEOJSON_REGISTRY } from "./geojson";
+import { getLegacyPopupFieldSet } from "./legacyPopupFields";
 
 /* ===== Helpers ===== */
 const asNum = (v) => (typeof v === "number" ? v : Number(v));
@@ -142,11 +143,15 @@ function buildPopupHTML(p, {
   titleKeys = ['ZonSec', 'ZonSec2022', 'Uso', 'USO', 'Categoria'],
   extraOmit = [],
   perKeyRender = null, // fn({k, label, value}) → string|undefined (para casos especiales)
-} = {}) {
+} = {}, layerDef) {
   const title = (titleKeys.map((k) => p?.[k]).find(Boolean) || '').toString().toUpperCase();
   let html = `<div class="PopupSubT"><b>${title}</b></div>`;
 
-  const omit = new Set([...BASE_OMIT, ...titleKeys, ...extraOmit]);
+  const omit = new Set(
+    [...BASE_OMIT, ...titleKeys, ...extraOmit].flatMap((key) => [key, String(key).toLowerCase()])
+  );
+  const allow = getLegacyPopupFieldSet(layerDef);
+  const seen = new Set();
 
   // 1) Consolidar grupos (limpia fragmentos y asegura punto final)
   const consolidated = {};
@@ -161,12 +166,19 @@ function buildPopupHTML(p, {
       const joined = vals.join('; ');
       consolidated[outLabel] = ensureFinalPeriod(outLabel, joined);
     }
-    keys.forEach((k) => omit.add(k));
+    keys.forEach((k) => {
+      omit.add(k);
+      omit.add(String(k).toLowerCase());
+    });
   }
 
   // 2) Recorrer props originales con normalización
   for (const k in p) {
-    if (!Object.hasOwn(p, k) || omit.has(k)) continue;
+    const normalizedKey = String(k).toLowerCase();
+    if (!Object.hasOwn(p, k) || omit.has(k) || omit.has(normalizedKey)) continue;
+    if (allow && !allow.has(normalizedKey)) continue;
+    if (seen.has(normalizedKey)) continue;
+    seen.add(normalizedKey);
     const { label, value, skip } = normalizeKV(k, p[k]);
     if (skip) continue;
 
@@ -346,7 +358,7 @@ function pmduPoly(data, paneId, ld, popupBuilder) {
     }),
     onEachFeature: (feature, layer) => {
       const p = feature?.properties ?? {};
-      if (popupBuilder) layer.bindPopup(popupBuilder(p));
+      if (popupBuilder) layer.bindPopup(popupBuilder(p, ld));
     }
   });
 }
@@ -360,7 +372,7 @@ const popupPachuca = (p) => {
 
 
 /** Tizayuca (con aviso visual en "Plazo") */
-const popupTizayuca = (p) => {
+const popupTizayuca = (p, ld) => {
   const title = (p?.ZonSec2022 || '').toString().toUpperCase();
   return buildPopupHTML(p, {
     titleKeys: ['ZonSec2022'],
@@ -373,39 +385,39 @@ const popupTizayuca = (p) => {
       }
       return undefined;
     },
-  }).replace('<div class="PopupSubT"><b></b></div>', `<div class="PopupSubT"><b>${title}</b></div>`);
+  }, ld).replace('<div class="PopupSubT"><b></b></div>', `<div class="PopupSubT"><b>${title}</b></div>`);
 };
 
 /** Villa de Tezontepec (ignora NOMGEO y muestra título desde ZonSec) */
-const popupVilla = (p) => buildPopupHTML(p, {
+const popupVilla = (p, ld) => buildPopupHTML(p, {
   titleKeys: ['ZonSec'],
   extraOmit: ['NOMGEO'],
-});
+}, ld);
 
 /** Mineral de la Reforma (genérico, respetando Superficie) */
-const popupMR = (p) => buildPopupHTML(p, {
+const popupMR = (p, ld) => buildPopupHTML(p, {
   titleKeys: ['ZonSec'],
-});
+}, ld);
 
 /** Epazoyucan (genérico) */
-const popupEpaz = (p) => buildPopupHTML(p, {
+const popupEpaz = (p, ld) => buildPopupHTML(p, {
   titleKeys: ['ZonSec', 'ZonSec2022', 'Uso', 'USO'],
-});
+}, ld);
 
 /** Cuautepec (genérico) */
-const popupCuautepec = (p) => buildPopupHTML(p, {
+const popupCuautepec = (p, ld) => buildPopupHTML(p, {
   titleKeys: ['ZonSec', 'ZonSec2022', 'Uso', 'USO'],
-});
+}, ld);
 
 /** Tepeji (genérico; conserva posibles títulos alternos) */
-const popupTepeji = (p) => buildPopupHTML(p, {
+const popupTepeji = (p, ld) => buildPopupHTML(p, {
   titleKeys: ['ZonSec', 'USO', 'Uso', 'Clasif', 'Categoria'],
-});
+}, ld);
 
 /** Santiago de Tulantepec de Lugo Guerrero (genérico) */
-const popupSantiago = (p) => buildPopupHTML(p, {
+const popupSantiago = (p, ld) => buildPopupHTML(p, {
   titleKeys: ['ZonSec', 'ZonSec2022', 'Uso', 'USO', 'Categoria'],
-});
+}, ld);
 
 /* ====== Builders concretos ====== */
 const buildPachuca = (data, paneId, ld) => pmduPoly(data, paneId, ld, popupPachuca);
