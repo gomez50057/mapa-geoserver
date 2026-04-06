@@ -207,79 +207,85 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
       const newLayerIds = [...currentOn].filter((id) => !lastOnRef.current.has(id));
       let unionBounds = null;
 
-      for (const layerDef of visibleDefs) {
-        if (cancelled || token !== loadTokenRef.current) return;
-
-        const z = getLayerZ(layerDef, zMap);
-
-        if (layerDef.sourceType === "wms") {
-          const paneId = ensureTilePane(map, paneRef, layerDef.id, z);
-          let layer = groupRef.current[layerDef.id];
-
-          if (!layer || lastPaneRef.current[layerDef.id] !== paneId) {
-            if (layer && map.hasLayer(layer)) map.removeLayer(layer);
-            layer = createWmsLayer(layerDef, paneId, z);
-            groupRef.current[layerDef.id] = layer;
-            lastPaneRef.current[layerDef.id] = paneId;
-            layer.addTo(map);
-          } else {
-            if (!map.hasLayer(layer)) layer.addTo(map);
-            if (typeof layer.setZIndex === "function") layer.setZIndex(z);
-          }
-
-          if (newLayerIds.includes(layerDef.id) && layerDef.bounds) {
-            const configuredBounds = boundsFromConfig(layerDef.bounds);
-            if (configuredBounds) {
-              unionBounds = unionBounds
-                ? unionBounds.extend(configuredBounds)
-                : L.latLngBounds(configuredBounds.getSouthWest(), configuredBounds.getNorthEast());
-            }
-          }
-          continue;
-        }
-
-        const paneId = vectorPaneIdFromZ(z);
-        ensurePane(map, paneRef, paneId, z);
-        const renderer = ensureVectorRenderer(map, rendererRef, paneId);
-        let layer = groupRef.current[layerDef.id];
-
-        if (layer && lastPaneRef.current[layerDef.id] !== paneId) {
-          if (map.hasLayer(layer)) map.removeLayer(layer);
-          delete groupRef.current[layerDef.id];
-          layer = null;
-        }
-
-        if (!layer) {
-          if (layerDef.sourceType === "wfs") {
-            const featureCollection = await fetchWfsFeatures(layerDef, { maxFeatures: 3000 });
-            sourceDataRef.current[layerDef.id] = featureCollection;
-            layer = await buildWfsLayer(featureCollection, paneId, layerDef);
-          } else if (layerDef.sourceType === "local" && GEOSERVER_CONFIG.localFallbackEnabled) {
-            layer = await loadLegacyLocalLayer(layerDef, paneId);
-          }
-
-          if (layer) {
-            groupRef.current[layerDef.id] = layer;
-            lastPaneRef.current[layerDef.id] = paneId;
-            layer = await addVectorLayer(layerDef, layer, paneId, renderer);
-          }
-        } else if (!map.hasLayer(layer)) {
-          layer = await addVectorLayer(layerDef, layer, paneId, renderer);
-        }
-
-        if (newLayerIds.includes(layerDef.id) && layer?.getBounds?.()?.isValid?.()) {
-          const bounds = layer.getBounds();
-          unionBounds = unionBounds
-            ? unionBounds.extend(bounds)
-            : L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
-        }
-      }
-
       Object.keys(groupRef.current).forEach((id) => {
         if (currentOn.has(id)) return;
         const layer = groupRef.current[id];
         if (layer && map.hasLayer(layer)) map.removeLayer(layer);
       });
+
+      for (const layerDef of visibleDefs) {
+        if (cancelled || token !== loadTokenRef.current) return;
+
+        try {
+          const z = getLayerZ(layerDef, zMap);
+
+          if (layerDef.sourceType === "wms") {
+            const paneId = ensureTilePane(map, paneRef, layerDef.id, z);
+            let layer = groupRef.current[layerDef.id];
+
+            if (!layer || lastPaneRef.current[layerDef.id] !== paneId) {
+              if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+              layer = createWmsLayer(layerDef, paneId, z);
+              groupRef.current[layerDef.id] = layer;
+              lastPaneRef.current[layerDef.id] = paneId;
+              layer.addTo(map);
+            } else {
+              if (!map.hasLayer(layer)) layer.addTo(map);
+              if (typeof layer.setZIndex === "function") layer.setZIndex(z);
+            }
+
+            if (newLayerIds.includes(layerDef.id) && layerDef.bounds) {
+              const configuredBounds = boundsFromConfig(layerDef.bounds);
+              if (configuredBounds) {
+                unionBounds = unionBounds
+                  ? unionBounds.extend(configuredBounds)
+                  : L.latLngBounds(configuredBounds.getSouthWest(), configuredBounds.getNorthEast());
+              }
+            }
+            continue;
+          }
+
+          const paneId = vectorPaneIdFromZ(z);
+          ensurePane(map, paneRef, paneId, z);
+          const renderer = ensureVectorRenderer(map, rendererRef, paneId);
+          let layer = groupRef.current[layerDef.id];
+
+          if (layer && lastPaneRef.current[layerDef.id] !== paneId) {
+            if (map.hasLayer(layer)) map.removeLayer(layer);
+            delete groupRef.current[layerDef.id];
+            layer = null;
+          }
+
+          if (!layer) {
+            if (layerDef.sourceType === "wfs") {
+              const featureCollection =
+                sourceDataRef.current[layerDef.id] ||
+                (await fetchWfsFeatures(layerDef, { maxFeatures: 3000 }));
+              sourceDataRef.current[layerDef.id] = featureCollection;
+              layer = await buildWfsLayer(featureCollection, paneId, layerDef);
+            } else if (layerDef.sourceType === "local" && GEOSERVER_CONFIG.localFallbackEnabled) {
+              layer = await loadLegacyLocalLayer(layerDef, paneId);
+            }
+
+            if (layer) {
+              groupRef.current[layerDef.id] = layer;
+              lastPaneRef.current[layerDef.id] = paneId;
+              layer = await addVectorLayer(layerDef, layer, paneId, renderer);
+            }
+          } else if (!map.hasLayer(layer)) {
+            layer = await addVectorLayer(layerDef, layer, paneId, renderer);
+          }
+
+          if (newLayerIds.includes(layerDef.id) && layer?.getBounds?.()?.isValid?.()) {
+            const bounds = layer.getBounds();
+            unionBounds = unionBounds
+              ? unionBounds.extend(bounds)
+              : L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
+          }
+        } catch (error) {
+          console.error(`Layer sync failed for ${layerDef.id}`, error);
+        }
+      }
 
       if (unionBounds?.isValid?.()) {
         map.flyToBounds(unionBounds, {

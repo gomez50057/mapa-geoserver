@@ -3,6 +3,9 @@ import { GEOSERVER_CONFIG, resolveServiceUrl } from "@/config/geoserver";
 import { getLayerPaint } from "@/data/legendCatalog";
 import { renderPopupContent } from "@/data/popupSchemas";
 
+const wfsResponseCache = new Map();
+const wfsPendingRequests = new Map();
+
 const PROPERTY_ALIAS_MAP = {
   id: "ID",
   nom_mun: "NOM_MUN",
@@ -128,9 +131,30 @@ export async function fetchWfsFeatures(layerDef, options = {}) {
   if (options.maxFeatures) params.maxFeatures = options.maxFeatures;
   if (options.bbox) params.bbox = options.bbox;
 
-  const response = await fetch(buildServiceUrl(GEOSERVER_CONFIG.wfsUrl, params));
-  if (!response.ok) throw new Error(`WFS GetFeature failed for ${layerDef.id}`);
-  return response.json();
+  const requestUrl = buildServiceUrl(GEOSERVER_CONFIG.wfsUrl, params);
+  const cacheKey = requestUrl;
+
+  if (wfsResponseCache.has(cacheKey)) {
+    return wfsResponseCache.get(cacheKey);
+  }
+
+  if (wfsPendingRequests.has(cacheKey)) {
+    return wfsPendingRequests.get(cacheKey);
+  }
+
+  const request = fetch(requestUrl)
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`WFS GetFeature failed for ${layerDef.id}`);
+      const payload = await response.json();
+      wfsResponseCache.set(cacheKey, payload);
+      return payload;
+    })
+    .finally(() => {
+      wfsPendingRequests.delete(cacheKey);
+    });
+
+  wfsPendingRequests.set(cacheKey, request);
+  return request;
 }
 
 export function buildPointBbox(latlng, radius = 0.003) {
