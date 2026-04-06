@@ -1,0 +1,2126 @@
+{
+  "type": "FeatureCollection",
+  "name": "Restauración",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0425",
+        "UGA": 425.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Los terrenos forestales (97.7ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Agrícola de temporal, Conservación, Energía fotovoltaica, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 19.54ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Vegetación secundaria de Matorral xerófilo (97.7ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 97.7,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 3/5, MI 4/5, PE 2/5, PF 5/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 3/5, SEQ 1/5, TOR 2/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Moderada",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy alto",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Agrícola de temporal, Conservación, Energía fotovoltaica, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Asentamientos humanos, Energía eólica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AT01, AT02, AT03, AT04, AT05, AT06, AT07, AT08, AT09, AT10, AT11, AT12, AT13, AT14, AT15, AT16, AT17, AT18, AT19, AT20, CC03, CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, EF01, EF02, EF03, EF04, EF05, EF06, EF07, EF08,",
+        "CRE_2": "EF09, EF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15,",
+        "CRE_3": "IF16, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E013, E021, E024, E025, E026, E028, E029, E030, E031, E032, E035, E039, E040, E041, E042, E043, E044, E045, E046, E047, E048, E049, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078,",
+        "EST_2": "E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112, E113, E116, E117, E100, E161, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 13.3371776242
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.59760336542494,
+                19.992935004358003
+              ],
+              [
+                -98.59661521826949,
+                19.992664867170824
+              ],
+              [
+                -98.59510604852204,
+                19.992766168880728
+              ],
+              [
+                -98.59409095274164,
+                19.992420054786507
+              ],
+              [
+                -98.59363281171065,
+                19.99198952190528
+              ],
+              [
+                -98.59348908069352,
+                19.991499894559126
+              ],
+              [
+                -98.59366874434781,
+                19.990807660643593
+              ],
+              [
+                -98.59528571123936,
+                19.989845281698976
+              ],
+              [
+                -98.59665115110275,
+                19.98981995639857
+              ],
+              [
+                -98.59783692703213,
+                19.990731684076426
+              ],
+              [
+                -98.59834896663824,
+                19.9914323596694
+              ],
+              [
+                -98.59842981539579,
+                19.99247914777603
+              ],
+              [
+                -98.5980076067513,
+                19.992884353696724
+              ],
+              [
+                -98.59760336542494,
+                19.992935004358003
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0445",
+        "UGA": 445.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Los terrenos forestales (316.1ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 63.22ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Matorral xerófilo (316.1ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 316.1,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 5/5, PE 2/5, PF 5/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Media",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04,",
+        "CRE_2": "IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30,",
+        "CRE_3": "MM31, MM32, MM33, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 223.965969937
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.63801856937839,
+                20.001739536100754
+              ],
+              [
+                -98.63726398503044,
+                20.00108111198324
+              ],
+              [
+                -98.63648245039414,
+                20.00124149782914
+              ],
+              [
+                -98.63631177084093,
+                20.001604474625168
+              ],
+              [
+                -98.63509006179153,
+                20.00202654057316
+              ],
+              [
+                -98.63269156055394,
+                20.00146941344208
+              ],
+              [
+                -98.63413784808783,
+                20.001444089376346
+              ],
+              [
+                -98.63510802856543,
+                20.00117396685541
+              ],
+              [
+                -98.63544040488695,
+                20.000844754655926
+              ],
+              [
+                -98.63554820310716,
+                20.000329830866427
+              ],
+              [
+                -98.63473073588243,
+                19.999781140324853
+              ],
+              [
+                -98.63484751691185,
+                19.999240888823312
+              ],
+              [
+                -98.63553921943371,
+                19.9990636185518
+              ],
+              [
+                -98.63672499560431,
+                19.999080500784835
+              ],
+              [
+                -98.63730890095347,
+                19.998683752369907
+              ],
+              [
+                -98.63745263129728,
+                19.99789869339437
+              ],
+              [
+                -98.63861145756879,
+                19.997864927468637
+              ],
+              [
+                -98.63980621713719,
+                19.997265578521663
+              ],
+              [
+                -98.64021045941315,
+                19.99666622691557
+              ],
+              [
+                -98.64039012196785,
+                19.99594869146365
+              ],
+              [
+                -98.64037215607607,
+                19.995112968801966
+              ],
+              [
+                -98.63999486332372,
+                19.9945304926814
+              ],
+              [
+                -98.64012062782665,
+                19.994023990611602
+              ],
+              [
+                -98.64091705749505,
+                19.994082120394463
+              ],
+              [
+                -98.6410716699478,
+                19.99413055139518
+              ],
+              [
+                -98.64185437595559,
+                19.99531556846491
+              ],
+              [
+                -98.64191559194475,
+                19.995337140413355
+              ],
+              [
+                -98.64193522415924,
+                19.995366218146092
+              ],
+              [
+                -98.64202878077106,
+                19.995377027781807
+              ],
+              [
+                -98.64235743282975,
+                19.995492843163802
+              ],
+              [
+                -98.64297726993051,
+                19.995509726899122
+              ],
+              [
+                -98.64301305219628,
+                19.995490749906097
+              ],
+              [
+                -98.64303116911279,
+                19.995492843113947
+              ],
+              [
+                -98.6438845683757,
+                19.995028551655615
+              ],
+              [
+                -98.6445029969277,
+                19.994073802740257
+              ],
+              [
+                -98.64582492923147,
+                19.993593461925318
+              ],
+              [
+                -98.64588739280666,
+                19.99352514018367
+              ],
+              [
+                -98.64595069336141,
+                19.993500602233294
+              ],
+              [
+                -98.6461258614564,
+                19.99326430703753
+              ],
+              [
+                -98.64637290190032,
+                19.99299409714547
+              ],
+              [
+                -98.6464113875958,
+                19.99287914027745
+              ],
+              [
+                -98.64650764962813,
+                19.992749285274073
+              ],
+              [
+                -98.64671191703417,
+                19.991981450831435
+              ],
+              [
+                -98.64687595889507,
+                19.99149145278126
+              ],
+              [
+                -98.64688649359245,
+                19.99132522085357
+              ],
+              [
+                -98.64691189072956,
+                19.99122975494748
+              ],
+              [
+                -98.64704663840327,
+                19.988798477561616
+              ],
+              [
+                -98.64772037464441,
+                19.987954274832465
+              ],
+              [
+                -98.64813360019238,
+                19.98694966764747
+              ],
+              [
+                -98.64880733607296,
+                19.986164550574426
+              ],
+              [
+                -98.64881736649566,
+                19.98612684456125
+              ],
+              [
+                -98.64887021832968,
+                19.986063244108447
+              ],
+              [
+                -98.64909479682173,
+                19.985320333923383
+              ],
+              [
+                -98.6491157572267,
+                19.985005157150248
+              ],
+              [
+                -98.6491486963107,
+                19.98488133904194
+              ],
+              [
+                -98.64914261558167,
+                19.9846013161379
+              ],
+              [
+                -98.64915767966274,
+                19.984374805370372
+              ],
+              [
+                -98.64913447204336,
+                19.98422633101989
+              ],
+              [
+                -98.649121746811,
+                19.983640329197957
+              ],
+              [
+                -98.64895106626045,
+                19.98293117605252
+              ],
+              [
+                -98.64892752052668,
+                19.982902296442408
+              ],
+              [
+                -98.64892411715381,
+                19.982880521499542
+              ],
+              [
+                -98.64842106050745,
+                19.982281115689403
+              ],
+              [
+                -98.64712242734,
+                19.98124331188914
+              ],
+              [
+                -98.64689392432716,
+                19.980508212425327
+              ],
+              [
+                -98.64638188546039,
+                19.979765274929896
+              ],
+              [
+                -98.64630433376057,
+                19.978992699938242
+              ],
+              [
+                -98.64632175675249,
+                19.97880930391414
+              ],
+              [
+                -98.64637383614816,
+                19.978702235753676
+              ],
+              [
+                -98.64654025358806,
+                19.978551625891743
+              ],
+              [
+                -98.64664397551114,
+                19.97852853896581
+              ],
+              [
+                -98.64712294128995,
+                19.978556672710816
+              ],
+              [
+                -98.64715187120824,
+                19.978561506094646
+              ],
+              [
+                -98.64728965108397,
+                19.978636879511146
+              ],
+              [
+                -98.64764850980939,
+                19.978870368674503
+              ],
+              [
+                -98.64771314444984,
+                19.97886855509984
+              ],
+              [
+                -98.64774732461855,
+                19.978887253696705
+              ],
+              [
+                -98.64786893976475,
+                19.97886418442065
+              ],
+              [
+                -98.64825038035782,
+                19.97885348379621
+              ],
+              [
+                -98.64863825342414,
+                19.978718255673655
+              ],
+              [
+                -98.648726488079,
+                19.978701518480136
+              ],
+              [
+                -98.64875422053666,
+                19.978677824366514
+              ],
+              [
+                -98.64880733608129,
+                19.978659305151854
+              ],
+              [
+                -98.64922056107959,
+                19.978279390053
+              ],
+              [
+                -98.64947208980728,
+                19.977815048320817
+              ],
+              [
+                -98.64947965159556,
+                19.977753117504264
+              ],
+              [
+                -98.64949903871619,
+                19.97771373734581
+              ],
+              [
+                -98.64950058372384,
+                19.97758168974866
+              ],
+              [
+                -98.64953497179367,
+                19.977300049513786
+              ],
+              [
+                -98.64950614729082,
+                19.97710577835928
+              ],
+              [
+                -98.64950802240404,
+                19.976945459556593
+              ],
+              [
+                -98.64922056178496,
+                19.975180937861587
+              ],
+              [
+                -98.65839664382166,
+                19.97742082000383
+              ],
+              [
+                -98.65844057709342,
+                19.977988871280886
+              ],
+              [
+                -98.65804479780337,
+                19.980620194927642
+              ],
+              [
+                -98.65737823500787,
+                19.982822182724053
+              ],
+              [
+                -98.65682187544651,
+                19.984060194723615
+              ],
+              [
+                -98.65636028994304,
+                19.98508729843782
+              ],
+              [
+                -98.65611952507226,
+                19.985607487679207
+              ],
+              [
+                -98.65548222545047,
+                19.986984398092805
+              ],
+              [
+                -98.65432411143249,
+                19.989471599007757
+              ],
+              [
+                -98.65332419972037,
+                19.99124621833598
+              ],
+              [
+                -98.6526948892385,
+                19.992363078523187
+              ],
+              [
+                -98.65220383205283,
+                19.993234562922662
+              ],
+              [
+                -98.65198131129786,
+                19.99362947055991
+              ],
+              [
+                -98.65038097696988,
+                19.996469507197382
+              ],
+              [
+                -98.65002823030693,
+                19.997095493876394
+              ],
+              [
+                -98.64990328077569,
+                19.997147397102665
+              ],
+              [
+                -98.64905886490317,
+                19.997248695106173
+              ],
+              [
+                -98.64833122952055,
+                19.996927916167063
+              ],
+              [
+                -98.64733409909746,
+                19.996978565630286
+              ],
+              [
+                -98.64621120474871,
+                19.99766233084681
+              ],
+              [
+                -98.64498051288476,
+                19.99729090274526
+              ],
+              [
+                -98.64336354609792,
+                19.997079864440494
+              ],
+              [
+                -98.64213285334117,
+                19.997079864305796
+              ],
+              [
+                -98.64051588598127,
+                19.997493499789293
+              ],
+              [
+                -98.6400128300685,
+                19.997974667396925
+              ],
+              [
+                -98.64034520589473,
+                19.99902985276962
+              ],
+              [
+                -98.64006672890287,
+                19.9997136082908
+              ],
+              [
+                -98.6402823239946,
+                20.000346713952773
+              ],
+              [
+                -98.64073148184595,
+                20.00066748557658
+              ],
+              [
+                -98.64089317841491,
+                20.001351234982366
+              ],
+              [
+                -98.64061470082963,
+                20.001562268473975
+              ],
+              [
+                -98.63899773365165,
+                20.001452531208827
+              ],
+              [
+                -98.63832399737882,
+                20.002034981636164
+              ],
+              [
+                -98.63801856937839,
+                20.001739536100754
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.66072572815764,
+                19.977989264482346
+              ],
+              [
+                -98.66072592017801,
+                19.977989311839888
+              ],
+              [
+                -98.66154191687602,
+                19.979358760816474
+              ],
+              [
+                -98.66154230729781,
+                19.979359450149463
+              ],
+              [
+                -98.66138707270802,
+                19.979098929048195
+              ],
+              [
+                -98.66072572815764,
+                19.977989264482346
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0558",
+        "UGA": 558.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Los terrenos forestales (14.2ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Minería no metálica,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 2.84ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Matorral xerófilo (14.2ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 14.2,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 1/5, MI 5/5, PE 2/5, PF 2/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Minería no metálica,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Infraestructura, Minería metálica, Turismo de naturaleza, Turismo convencional,",
+        "CRE_1": "CC06, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, MN01, MN02, MN03, MN04, MN05, MN06,",
+        "CRE_2": "MN07, MN08, MN09, MN10, MN11, MN12, MN13, MN14, MN15, MN16, MN17, MN18, MN19, MN20, MN21, MN22, MN23, MN24, MN25, MN26, MN27, MN28,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E226, E227, E228, E229, E230, E212,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 14.1039604122
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.67237014583066,
+                20.036007518730383
+              ],
+              [
+                -98.67234319656899,
+                20.035619302531092
+              ],
+              [
+                -98.67313371387792,
+                20.03399891168914
+              ],
+              [
+                -98.67449915369278,
+                20.033408139735492
+              ],
+              [
+                -98.67636764929816,
+                20.034395571084975
+              ],
+              [
+                -98.67665511010867,
+                20.0346403181558
+              ],
+              [
+                -98.67680782375389,
+                20.035087613179304
+              ],
+              [
+                -98.67655629563235,
+                20.035416754240416
+              ],
+              [
+                -98.67626883445095,
+                20.03688522034133
+              ],
+              [
+                -98.67531661996529,
+                20.037087766494242
+              ],
+              [
+                -98.6750022102779,
+                20.037475979124686
+              ],
+              [
+                -98.6745530521007,
+                20.03745066092754
+              ],
+              [
+                -98.67401406276483,
+                20.037146842620267
+              ],
+              [
+                -98.67316066374433,
+                20.036665795975043
+              ],
+              [
+                -98.67237014583066,
+                20.036007518730383
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "2373.33",
+        "UGA": 2373.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Se mantienen 34.9ha de cuerpos de agua, con las fluctuaciones naturales en su superficie, derivadas del régimen anual de lluvia, donde se desarrolla el sector Acuícola, Conservación, Infraestructura, y Turismo de naturaleza.",
+        "LINEAMIEN2": null,
+        "LINEAMIEN3": null,
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Cuerpo de agua (34.9ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 0.0,
+        "AGUA_HA": 34.9,
+        "APTITUD_SE": "AC 5/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 5/5, MI 5/5, PE 2/5, PF 2/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 5/5, SEQ 3/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Acuícola, Conservación, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AC01, AC02, AC03, AG04, AG05, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC17, AC18, CC01, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09,",
+        "CRE_2": "IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF17, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30, MM31, MM32, MM33, TN01,",
+        "CRE_3": "TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E001, E002, E003, E103, E106, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107,",
+        "EST_2": "E108, E109, E110, E111, E112, E113, E116, E117, E067, E069, E119, E122, E146, E150, E152, E153, E115, E114, E121, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 33.6184717278
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.64830428008828,
+                20.070909286403513
+              ],
+              [
+                -98.64598662614834,
+                20.070192088939635
+              ],
+              [
+                -98.64463017044702,
+                20.069221758455146
+              ],
+              [
+                -98.64448643955512,
+                20.069120506518445
+              ],
+              [
+                -98.64448282715117,
+                20.069118879912825
+              ],
+              [
+                -98.64415406357124,
+                20.068884250956287
+              ],
+              [
+                -98.64383066965122,
+                20.068825186701353
+              ],
+              [
+                -98.6429143875832,
+                20.06911206851296
+              ],
+              [
+                -98.64224437086001,
+                20.069105580582804
+              ],
+              [
+                -98.64160284781694,
+                20.068909564321178
+              ],
+              [
+                -98.6416387799356,
+                20.068690183512725
+              ],
+              [
+                -98.64210590447537,
+                20.068259859530805
+              ],
+              [
+                -98.6425640448682,
+                20.06831048654387
+              ],
+              [
+                -98.64287845570017,
+                20.068015164718314
+              ],
+              [
+                -98.64308506789686,
+                20.067483586226086
+              ],
+              [
+                -98.64359710808198,
+                20.06738233294128
+              ],
+              [
+                -98.64524102448526,
+                20.068116418564713
+              ],
+              [
+                -98.64575306384282,
+                20.068074229652805
+              ],
+              [
+                -98.64606747476768,
+                20.067728281470096
+              ],
+              [
+                -98.64678612679549,
+                20.067441397542492
+              ],
+              [
+                -98.64843004392179,
+                20.06793078807262
+              ],
+              [
+                -98.64920259472439,
+                20.06764390390507
+              ],
+              [
+                -98.65043328656118,
+                20.06609134688676
+              ],
+              [
+                -98.65152024879691,
+                20.065652577732116
+              ],
+              [
+                -98.65263577143403,
+                20.065652576992594
+              ],
+              [
+                -98.65263093202446,
+                20.065663109454317
+              ],
+              [
+                -98.65270515978187,
+                20.065762193189748
+              ],
+              [
+                -98.65271948030065,
+                20.065955560722262
+              ],
+              [
+                -98.65255469832664,
+                20.06569935046476
+              ],
+              [
+                -98.65221419980551,
+                20.065789727027845
+              ],
+              [
+                -98.65196855962452,
+                20.065906013034823
+              ],
+              [
+                -98.65187621215397,
+                20.066000243527764
+              ],
+              [
+                -98.65209132671173,
+                20.066649396020537
+              ],
+              [
+                -98.65227348792918,
+                20.06716903474178
+              ],
+              [
+                -98.65266346846907,
+                20.066891219244535
+              ],
+              [
+                -98.65278525009091,
+                20.066835659114787
+              ],
+              [
+                -98.65283178910178,
+                20.067441397038188
+              ],
+              [
+                -98.6522413803617,
+                20.068743778014657
+              ],
+              [
+                -98.6522351326871,
+                20.068753602842698
+              ],
+              [
+                -98.65172931058866,
+                20.069338351921804
+              ],
+              [
+                -98.65081057972931,
+                20.070124588356904
+              ],
+              [
+                -98.65057701691943,
+                20.070732096990124
+              ],
+              [
+                -98.65050820436164,
+                20.07101413332932
+              ],
+              [
+                -98.65033447247615,
+                20.071525229430232
+              ],
+              [
+                -98.65037938807961,
+                20.07176148144633
+              ],
+              [
+                -98.64973260104595,
+                20.071913357126032
+              ],
+              [
+                -98.64830428008828,
+                20.070909286403513
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0445",
+        "UGA": 445.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Los terrenos forestales (316.1ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 63.22ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Matorral xerófilo (316.1ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 316.1,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 5/5, PE 2/5, PF 5/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Media",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04,",
+        "CRE_2": "IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30,",
+        "CRE_3": "MM31, MM32, MM33, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.22643613398
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.64301305219628,
+                19.995490749906097
+              ],
+              [
+                -98.6438845683757,
+                19.995028551655615
+              ],
+              [
+                -98.64303116911279,
+                19.995492843113947
+              ],
+              [
+                -98.64301305219628,
+                19.995490749906097
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64191559194475,
+                19.995337140413355
+              ],
+              [
+                -98.64202878077106,
+                19.995377027781807
+              ],
+              [
+                -98.64193522415924,
+                19.995366218146092
+              ],
+              [
+                -98.64191559194475,
+                19.995337140413355
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.6445029969277,
+                19.994073802740257
+              ],
+              [
+                -98.6438845683757,
+                19.995028551655615
+              ],
+              [
+                -98.64447745672064,
+                19.99408308266922
+              ],
+              [
+                -98.6445029969277,
+                19.994073802740257
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64091705749505,
+                19.994082120394463
+              ],
+              [
+                -98.64104589200531,
+                19.99409152361936
+              ],
+              [
+                -98.6410716699478,
+                19.99413055139518
+              ],
+              [
+                -98.64091705749505,
+                19.994082120394463
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.6461258614564,
+                19.99326430703753
+              ],
+              [
+                -98.64595069336141,
+                19.993500602233294
+              ],
+              [
+                -98.64588739280666,
+                19.99352514018367
+              ],
+              [
+                -98.6461258614564,
+                19.99326430703753
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64671191703417,
+                19.991981450831435
+              ],
+              [
+                -98.64650764962813,
+                19.992749285274073
+              ],
+              [
+                -98.6464113875958,
+                19.99287914027745
+              ],
+              [
+                -98.64671191703417,
+                19.991981450831435
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64704663840327,
+                19.988798477561616
+              ],
+              [
+                -98.64691189072956,
+                19.99122975494748
+              ],
+              [
+                -98.64688649359245,
+                19.99132522085357
+              ],
+              [
+                -98.64704663840327,
+                19.988798477561616
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64881736649566,
+                19.98612684456125
+              ],
+              [
+                -98.64880733607296,
+                19.986164550574426
+              ],
+              [
+                -98.64813360019238,
+                19.98694966764747
+              ],
+              [
+                -98.64881736649566,
+                19.98612684456125
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64914261558167,
+                19.9846013161379
+              ],
+              [
+                -98.6491486963107,
+                19.98488133904194
+              ],
+              [
+                -98.6491157572267,
+                19.985005157150248
+              ],
+              [
+                -98.64914261558167,
+                19.9846013161379
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64892752052668,
+                19.982902296442408
+              ],
+              [
+                -98.64895106626045,
+                19.98293117605252
+              ],
+              [
+                -98.649121746811,
+                19.983640329197957
+              ],
+              [
+                -98.64913447204336,
+                19.98422633101989
+              ],
+              [
+                -98.64892752052668,
+                19.982902296442408
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64689392432716,
+                19.980508212425327
+              ],
+              [
+                -98.64712242734,
+                19.98124331188914
+              ],
+              [
+                -98.64710053721964,
+                19.98122581870665
+              ],
+              [
+                -98.64689392432716,
+                19.980508212425327
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64632175675249,
+                19.97880930391414
+              ],
+              [
+                -98.64630433376057,
+                19.978992699938242
+              ],
+              [
+                -98.64629205372037,
+                19.978870368995143
+              ],
+              [
+                -98.64632175675249,
+                19.97880930391414
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64771314444984,
+                19.97886855509984
+              ],
+              [
+                -98.64786893976475,
+                19.97886418442065
+              ],
+              [
+                -98.64774732461855,
+                19.978887253696705
+              ],
+              [
+                -98.64771314444984,
+                19.97886855509984
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64875422053666,
+                19.978677824366514
+              ],
+              [
+                -98.648726488079,
+                19.978701518480136
+              ],
+              [
+                -98.64863825342414,
+                19.978718255673655
+              ],
+              [
+                -98.64875422053666,
+                19.978677824366514
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64654025358806,
+                19.978551625891743
+              ],
+              [
+                -98.64637383614816,
+                19.978702235753676
+              ],
+              [
+                -98.64643578380168,
+                19.97857488024982
+              ],
+              [
+                -98.64654025358806,
+                19.978551625891743
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64715187120824,
+                19.978561506094646
+              ],
+              [
+                -98.64718138587969,
+                19.978566437328325
+              ],
+              [
+                -98.64728965108397,
+                19.978636879511146
+              ],
+              [
+                -98.64715187120824,
+                19.978561506094646
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64664397551114,
+                19.97852853896581
+              ],
+              [
+                -98.64677714397268,
+                19.97849889674973
+              ],
+              [
+                -98.64712294128995,
+                19.978556672710816
+              ],
+              [
+                -98.64664397551114,
+                19.97852853896581
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64950058372384,
+                19.97758168974866
+              ],
+              [
+                -98.64949903871619,
+                19.97771373734581
+              ],
+              [
+                -98.64947965159556,
+                19.977753117504264
+              ],
+              [
+                -98.64950058372384,
+                19.97758168974866
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64922056178496,
+                19.975180937861587
+              ],
+              [
+                -98.64950802240404,
+                19.976945459556593
+              ],
+              [
+                -98.64950614729082,
+                19.97710577835928
+              ],
+              [
+                -98.64922056178496,
+                19.975180937861587
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0445",
+        "UGA": 445.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Los terrenos forestales (316.1ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 63.22ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Matorral xerófilo (316.1ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 316.1,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 5/5, PE 2/5, PF 5/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Media",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04,",
+        "CRE_2": "IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30,",
+        "CRE_3": "MM31, MM32, MM33, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.0038037983
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.63800500884615,
+                20.001747935883692
+              ],
+              [
+                -98.63801856937839,
+                20.001739536100754
+              ],
+              [
+                -98.63832399737882,
+                20.002034981636164
+              ],
+              [
+                -98.63800500884615,
+                20.001747935883692
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0445",
+        "UGA": 445.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Los terrenos forestales (316.1ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 63.22ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Matorral xerófilo (316.1ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 316.1,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 5/5, PE 2/5, PF 5/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Media",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04,",
+        "CRE_2": "IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30,",
+        "CRE_3": "MM31, MM32, MM33, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.00883642388
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.63726398503044,
+                20.00108111198324
+              ],
+              [
+                -98.63801856937839,
+                20.001739536100754
+              ],
+              [
+                -98.63800500884615,
+                20.001747935883692
+              ],
+              [
+                -98.63726398503044,
+                20.00108111198324
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "2373.33",
+        "UGA": 2373.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Se mantienen 34.9ha de cuerpos de agua, con las fluctuaciones naturales en su superficie, derivadas del régimen anual de lluvia, donde se desarrolla el sector Acuícola, Conservación, Infraestructura, y Turismo de naturaleza.",
+        "LINEAMIEN2": null,
+        "LINEAMIEN3": null,
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Cuerpo de agua (34.9ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 0.0,
+        "AGUA_HA": 34.9,
+        "APTITUD_SE": "AC 5/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 5/5, MI 5/5, PE 2/5, PF 2/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 5/5, SEQ 3/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Acuícola, Conservación, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AC01, AC02, AC03, AG04, AG05, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC17, AC18, CC01, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09,",
+        "CRE_2": "IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF17, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30, MM31, MM32, MM33, TN01,",
+        "CRE_3": "TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E001, E002, E003, E103, E106, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107,",
+        "EST_2": "E108, E109, E110, E111, E112, E113, E116, E117, E067, E069, E119, E122, E146, E150, E152, E153, E115, E114, E121, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.03669539348
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.65283178910178,
+                20.067441397038188
+              ],
+              [
+                -98.65240958078284,
+                20.068479240371836
+              ],
+              [
+                -98.6522413803617,
+                20.068743778014657
+              ],
+              [
+                -98.65283178910178,
+                20.067441397038188
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.65278525009091,
+                20.066835659114787
+              ],
+              [
+                -98.65278612987433,
+                20.066835257815725
+              ],
+              [
+                -98.65283178910178,
+                20.067441397038188
+              ],
+              [
+                -98.65278525009091,
+                20.066835659114787
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "2373.33",
+        "UGA": 2373.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Se mantienen 34.9ha de cuerpos de agua, con las fluctuaciones naturales en su superficie, derivadas del régimen anual de lluvia, donde se desarrolla el sector Acuícola, Conservación, Infraestructura, y Turismo de naturaleza.",
+        "LINEAMIEN2": null,
+        "LINEAMIEN3": null,
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Cuerpo de agua (34.9ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 0.0,
+        "AGUA_HA": 34.9,
+        "APTITUD_SE": "AC 5/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 5/5, MI 5/5, PE 2/5, PF 2/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 5/5, SEQ 3/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Acuícola, Conservación, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AC01, AC02, AC03, AG04, AG05, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC17, AC18, CC01, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09,",
+        "CRE_2": "IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF17, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30, MM31, MM32, MM33, TN01,",
+        "CRE_3": "TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E001, E002, E003, E103, E106, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107,",
+        "EST_2": "E108, E109, E110, E111, E112, E113, E116, E117, E067, E069, E119, E122, E146, E150, E152, E153, E115, E114, E121, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.00178546162
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.64463012140759,
+                20.06922399850091
+              ],
+              [
+                -98.64463017044702,
+                20.069221758455146
+              ],
+              [
+                -98.64598662614834,
+                20.070192088939635
+              ],
+              [
+                -98.64463012140759,
+                20.06922399850091
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "2373.33",
+        "UGA": 2373.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Se mantienen 34.9ha de cuerpos de agua, con las fluctuaciones naturales en su superficie, derivadas del régimen anual de lluvia, donde se desarrolla el sector Acuícola, Conservación, Infraestructura, y Turismo de naturaleza.",
+        "LINEAMIEN2": null,
+        "LINEAMIEN3": null,
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Cuerpo de agua (34.9ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 0.0,
+        "AGUA_HA": 34.9,
+        "APTITUD_SE": "AC 5/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 5/5, MI 5/5, PE 2/5, PF 2/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 5/5, SEQ 3/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Acuícola, Conservación, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AC01, AC02, AC03, AG04, AG05, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC17, AC18, CC01, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09,",
+        "CRE_2": "IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF17, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30, MM31, MM32, MM33, TN01,",
+        "CRE_3": "TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E001, E002, E003, E103, E106, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107,",
+        "EST_2": "E108, E109, E110, E111, E112, E113, E116, E117, E067, E069, E119, E122, E146, E150, E152, E153, E115, E114, E121, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.01193818654
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.64224437086001,
+                20.069105580582804
+              ],
+              [
+                -98.6429143875832,
+                20.06911206851296
+              ],
+              [
+                -98.64234844938109,
+                20.069137381902472
+              ],
+              [
+                -98.64224437086001,
+                20.069105580582804
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.64448282715117,
+                20.069118879912825
+              ],
+              [
+                -98.64448643955512,
+                20.069120506518445
+              ],
+              [
+                -98.6444854940296,
+                20.069120782939887
+              ],
+              [
+                -98.64448282715117,
+                20.069118879912825
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "2373.33",
+        "UGA": 2373.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Se mantienen 34.9ha de cuerpos de agua, con las fluctuaciones naturales en su superficie, derivadas del régimen anual de lluvia, donde se desarrolla el sector Acuícola, Conservación, Infraestructura, y Turismo de naturaleza.",
+        "LINEAMIEN2": null,
+        "LINEAMIEN3": null,
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Cuerpo de agua (34.9ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 0.0,
+        "AGUA_HA": 34.9,
+        "APTITUD_SE": "AC 5/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 5/5, MI 5/5, PE 2/5, PF 2/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 5/5, SEQ 3/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Acuícola, Conservación, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AC01, AC02, AC03, AG04, AG05, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC17, AC18, CC01, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09,",
+        "CRE_2": "IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF17, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30, MM31, MM32, MM33, TN01,",
+        "CRE_3": "TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E001, E002, E003, E103, E106, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107,",
+        "EST_2": "E108, E109, E110, E111, E112, E113, E116, E117, E067, E069, E119, E122, E146, E150, E152, E153, E115, E114, E121, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.03975726784
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.65081057972931,
+                20.070124588356904
+              ],
+              [
+                -98.65050820436164,
+                20.07101413332932
+              ],
+              [
+                -98.65057701691943,
+                20.070732096990124
+              ],
+              [
+                -98.65081057972931,
+                20.070124588356904
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.6522351326871,
+                20.068753602842698
+              ],
+              [
+                -98.65202330524866,
+                20.069086755215586
+              ],
+              [
+                -98.65172931058866,
+                20.069338351921804
+              ],
+              [
+                -98.6522351326871,
+                20.068753602842698
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "2373.33",
+        "UGA": 2373.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Se mantienen 34.9ha de cuerpos de agua, con las fluctuaciones naturales en su superficie, derivadas del régimen anual de lluvia, donde se desarrolla el sector Acuícola, Conservación, Infraestructura, y Turismo de naturaleza.",
+        "LINEAMIEN2": null,
+        "LINEAMIEN3": null,
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Cuerpo de agua (34.9ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 0.0,
+        "AGUA_HA": 34.9,
+        "APTITUD_SE": "AC 5/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 5/5, MI 5/5, PE 2/5, PF 2/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 5/5, SEQ 3/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Acuícola, Conservación, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AC01, AC02, AC03, AG04, AG05, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC17, AC18, CC01, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09,",
+        "CRE_2": "IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF17, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30, MM31, MM32, MM33, TN01,",
+        "CRE_3": "TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E001, E002, E003, E103, E106, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107,",
+        "EST_2": "E108, E109, E110, E111, E112, E113, E116, E117, E067, E069, E119, E122, E146, E150, E152, E153, E115, E114, E121, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.00026873751
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.6444854940296,
+                20.069120782939887
+              ],
+              [
+                -98.64448643955512,
+                20.069120506518445
+              ],
+              [
+                -98.64463017044702,
+                20.069221758455146
+              ],
+              [
+                -98.64463012140759,
+                20.06922399850091
+              ],
+              [
+                -98.6444854940296,
+                20.069120782939887
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "2373.33",
+        "UGA": 2373.0,
+        "POLITICA": "Restauración",
+        "LINEAMIENT": "Se mantienen 34.9ha de cuerpos de agua, con las fluctuaciones naturales en su superficie, derivadas del régimen anual de lluvia, donde se desarrolla el sector Acuícola, Conservación, Infraestructura, y Turismo de naturaleza.",
+        "LINEAMIEN2": null,
+        "LINEAMIEN3": null,
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Pachuca - Tizayuca",
+        "USOS_SUELO": "Vegetación secundaria de Cuerpo de agua (34.9ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 0.0,
+        "AGUA_HA": 34.9,
+        "APTITUD_SE": "AC 5/5, AG 4/5, AH 2/5, CO 0/5, FO 0/5, GA 4/5, ID 1/5, IF 5/5, MI 5/5, PE 2/5, PF 2/5, TU 1/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 4/5, HUN 0/5, INU 5/5, SEQ 3/5, TOR 1/5",
+        "ACUIFERO": "1508 Cuautitlán Pachuca",
+        "DISP_AG_SU": -106.04,
+        "VOL_EXTR": 545.39,
+        "REC_ACUIF": "Alta",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Bajo",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Baja",
+        "USO_CONDIC": "Acuícola, Conservación, Infraestructura, Minería metálica, Turismo de naturaleza,",
+        "USO_INCOMP": "Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería no metálica, Turismo convencional,",
+        "CRE_1": "AC01, AC02, AC03, AG04, AG05, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, AC12, AC13, AC14, AC15, AC16, AC17, AC18, CC01, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, IF01, IF02, IF03, IF04, IF05, IF06, IF07, IF08, IF09,",
+        "CRE_2": "IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF17, MM01, MM02, MM03, MM04, MM05, MM06, MM07, MM08, MM09, MM10, MM11, MM12, MM13, MM14, MM15, MM16, MM17, MM18, MM19, MM20, MM21, MM22, MM23, MM24, MM25, MM26, MM27, MM28, MM29, MM30, MM31, MM32, MM33, TN01,",
+        "CRE_3": "TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E001, E002, E003, E103, E106, E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107,",
+        "EST_2": "E108, E109, E110, E111, E112, E113, E116, E117, E067, E069, E119, E122, E146, E150, E152, E153, E115, E114, E121, E202, E203, E204, E205, E206, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 5.870278e-05
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.65271948030065,
+                20.065955560722262
+              ],
+              [
+                -98.65270515978187,
+                20.065762193189748
+              ],
+              [
+                -98.65270531425797,
+                20.065762399525358
+              ],
+              [
+                -98.65271991586788,
+                20.06595623750785
+              ],
+              [
+                -98.65271948030065,
+                20.065955560722262
+              ]
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

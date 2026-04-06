@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "name": "Puente_multimodal",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "ZonSec": "Puente multimodal"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -98.7416492935979,
+          20.055717774814866,
+          0.0
+        ]
+      }
+    }
+  ]
+}

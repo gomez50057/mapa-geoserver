@@ -1,0 +1,1374 @@
+{
+  "type": "FeatureCollection",
+  "name": "Conservación-restauración",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0400",
+        "UGA": 400.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (1362.8ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 272.56ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Bosque de pino (1090.2ha), Vegetación secundaria de Bosque de pino (272.6ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 1362.8,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 5/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 5/5, TU 5/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 5/5, HEL 4/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1319 Tecocomulco",
+        "DISP_AG_SU": 25.96,
+        "VOL_EXTR": 2.97,
+        "REC_ACUIF": "Muy alta",
+        "CAPT_CO2": 1047.03,
+        "GRADO_CONS": "Alto",
+        "VAL_CONSER": "Muy alto",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FM01, FM02, FM03, FM04, FM05, FM06, FM07, FM08, FM09, FM10, FM11, FM12, FM13, FM14, FM15, FM16, FM17, FM18, FM19, FM20, FM21, FM22, FM23, IF01, IF02, IF03, IF04, IF05, IF06,",
+        "CRE_2": "IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E163, E164, E165, E166, E167, E168, E169, E170, E171, E172, E173, E174, E176, E177, E178, E179, E180, E182, E183, E184, E185, E186, E067, E069, E119, E122, E146, E150, E152, E153, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 2.21433715956
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.35875796702514,
+                19.992877142596992
+              ],
+              [
+                -98.35892997698774,
+                19.993070072614245
+              ],
+              [
+                -98.35870248625021,
+                19.993573492851883
+              ],
+              [
+                -98.35855283295702,
+                19.993717978784893
+              ],
+              [
+                -98.3585742289186,
+                19.993467689509938
+              ],
+              [
+                -98.35865135070473,
+                19.993157308322736
+              ],
+              [
+                -98.35875357877094,
+                19.99289479893449
+              ],
+              [
+                -98.35875796702514,
+                19.992877142596992
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.36139509245139,
+                19.989039366393715
+              ],
+              [
+                -98.36094220312498,
+                19.9895160457344
+              ],
+              [
+                -98.36025050064741,
+                19.990824544860967
+              ],
+              [
+                -98.35984625850891,
+                19.991086243250137
+              ],
+              [
+                -98.35897949472766,
+                19.99215732560488
+              ],
+              [
+                -98.35949342039761,
+                19.991320228761662
+              ],
+              [
+                -98.3598751790662,
+                19.99072414987866
+              ],
+              [
+                -98.36028128949576,
+                19.99036714994811
+              ],
+              [
+                -98.3605357400736,
+                19.989985720113904
+              ],
+              [
+                -98.36056190964857,
+                19.989770719782072
+              ],
+              [
+                -98.36020879872963,
+                19.989530480007243
+              ],
+              [
+                -98.3599054007715,
+                19.989505489356908
+              ],
+              [
+                -98.3597802188695,
+                19.989194369684984
+              ],
+              [
+                -98.35980636918968,
+                19.988979379337433
+              ],
+              [
+                -98.35965593874903,
+                19.988654319422942
+              ],
+              [
+                -98.35971532017442,
+                19.988389980064273
+              ],
+              [
+                -98.36139509245139,
+                19.989039366393715
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0495",
+        "UGA": 495.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (265.7ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 53.14ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Vegetación secundaria de Bosque de tascate (159.4ha), Bosque de tascate (106.3ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 265.7,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 2/5, TU 5/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1317 Valle de Tulancingo",
+        "DISP_AG_SU": -20.11,
+        "VOL_EXTR": 74.53,
+        "REC_ACUIF": "Muy alta",
+        "CAPT_CO2": 1047.03,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC10, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03,",
+        "CRE_2": "IF04, IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF18, IF19, IF20, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E207, E208, E209, E210, E211, E213, E214, E215, E216, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 93.2967255423
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.35702427627605,
+                20.005570970855814
+              ],
+              [
+                -98.35703208921522,
+                20.00552628697109
+              ],
+              [
+                -98.35780784942052,
+                20.004667631024425
+              ],
+              [
+                -98.35841914845413,
+                20.00488797977144
+              ],
+              [
+                -98.35846091543401,
+                20.004810321699523
+              ],
+              [
+                -98.35850776920911,
+                20.004854347867404
+              ],
+              [
+                -98.35825624042931,
+                20.005850399666087
+              ],
+              [
+                -98.35762742054058,
+                20.005749106163325
+              ],
+              [
+                -98.35746572374562,
+                20.006154277900144
+              ],
+              [
+                -98.35752860555662,
+                20.006534125779453
+              ],
+              [
+                -98.35783403309291,
+                20.006745152311098
+              ],
+              [
+                -98.35801369601622,
+                20.00651724430742
+              ],
+              [
+                -98.3587053982557,
+                20.00636530469065
+              ],
+              [
+                -98.35949591568462,
+                20.005411461716648
+              ],
+              [
+                -98.36099610202416,
+                20.00546210884818
+              ],
+              [
+                -98.36209204758268,
+                20.004508260752754
+              ],
+              [
+                -98.3623525588224,
+                20.00378231872621
+              ],
+              [
+                -98.36298137933086,
+                20.00282846086985
+              ],
+              [
+                -98.3644635995717,
+                20.00281157772847
+              ],
+              [
+                -98.36485885819715,
+                20.004094643416394
+              ],
+              [
+                -98.36535293143305,
+                20.003233640134187
+              ],
+              [
+                -98.36570327466417,
+                20.002220689378618
+              ],
+              [
+                -98.36743702335936,
+                20.002347308871983
+              ],
+              [
+                -98.36853296745328,
+                20.002980402905674
+              ],
+              [
+                -98.36897314200898,
+                20.003436229392904
+              ],
+              [
+                -98.3690899230262,
+                20.00414529061517
+              ],
+              [
+                -98.36870364796913,
+                20.005546519470645
+              ],
+              [
+                -98.36811075974055,
+                20.006517244054287
+              ],
+              [
+                -98.36759871949414,
+                20.006821121726656
+              ],
+              [
+                -98.36687108473264,
+                20.006821121659684
+              ],
+              [
+                -98.36648480844828,
+                20.007487961912517
+              ],
+              [
+                -98.36575717390471,
+                20.007192526813014
+              ],
+              [
+                -98.36506547108756,
+                20.007749632616843
+              ],
+              [
+                -98.36448156592145,
+                20.00803662575011
+              ],
+              [
+                -98.36409529050079,
+                20.008053508183483
+              ],
+              [
+                -98.3639335936497,
+                20.00766522281246
+              ],
+              [
+                -98.36365511542162,
+                20.007555490424053
+              ],
+              [
+                -98.36343053695366,
+                20.00778339651462
+              ],
+              [
+                -98.36308917675397,
+                20.007800279117472
+              ],
+              [
+                -98.36227171021469,
+                20.00828985534988
+              ],
+              [
+                -98.3622896766468,
+                20.00953911169952
+              ],
+              [
+                -98.36282866596694,
+                20.010957174856696
+              ],
+              [
+                -98.36295066107314,
+                20.011052998465814
+              ],
+              [
+                -98.3630083285843,
+                20.011185077225658
+              ],
+              [
+                -98.36512835304384,
+                20.012763499432953
+              ],
+              [
+                -98.36574819021327,
+                20.014139330116258
+              ],
+              [
+                -98.36538886435723,
+                20.01415621121816
+              ],
+              [
+                -98.36502055483331,
+                20.01436722752438
+              ],
+              [
+                -98.36415817214244,
+                20.01384390693565
+              ],
+              [
+                -98.36387071131048,
+                20.0130082798353
+              ],
+              [
+                -98.36349341851282,
+                20.0126200067707
+              ],
+              [
+                -98.36347545281437,
+                20.01231614091276
+              ],
+              [
+                -98.36323290780659,
+                20.01204603687125
+              ],
+              [
+                -98.36244238999906,
+                20.01227393635733
+              ],
+              [
+                -98.36226272681206,
+                20.011759050430552
+              ],
+              [
+                -98.36185848479155,
+                20.01152270906608
+              ],
+              [
+                -98.3610859339584,
+                20.011919425422484
+              ],
+              [
+                -98.36027745052743,
+                20.0119785103131
+              ],
+              [
+                -98.36003490542505,
+                20.012299259269437
+              ],
+              [
+                -98.35974744463357,
+                20.01241742919219
+              ],
+              [
+                -98.35912801954296,
+                20.0122874626573
+              ],
+              [
+                -98.35783403255083,
+                20.011640879474978
+              ],
+              [
+                -98.35767233595284,
+                20.011337011692333
+              ],
+              [
+                -98.35706148135296,
+                20.01179281344597
+              ],
+              [
+                -98.358570650787,
+                20.01403804247981
+              ],
+              [
+                -98.3583281060568,
+                20.01472173383418
+              ],
+              [
+                -98.35682791990496,
+                20.01493274872198
+              ],
+              [
+                -98.35623503169958,
+                20.015405421501267
+              ],
+              [
+                -98.35594757039306,
+                20.01597937979367
+              ],
+              [
+                -98.35588468833153,
+                20.016975361270074
+              ],
+              [
+                -98.35638774538681,
+                20.01760839638558
+              ],
+              [
+                -98.35654944197324,
+                20.018216108481667
+              ],
+              [
+                -98.35641469410136,
+                20.018427118990783
+              ],
+              [
+                -98.3564011229773,
+                20.018457935620532
+              ],
+              [
+                -98.35624401463062,
+                20.018714092847443
+              ],
+              [
+                -98.3561394017389,
+                20.019099289301366
+              ],
+              [
+                -98.35597525081882,
+                20.018791689169966
+              ],
+              [
+                -98.3559622484097,
+                20.018752297233167
+              ],
+              [
+                -98.35588851885224,
+                20.018528910095082
+              ],
+              [
+                -98.35584551915814,
+                20.018307710337208
+              ],
+              [
+                -98.35587545996486,
+                20.01814204961818
+              ],
+              [
+                -98.35594917926981,
+                20.018004169165653
+              ],
+              [
+                -98.35612533911785,
+                20.017866659381827
+              ],
+              [
+                -98.3561995096761,
+                20.017618279099548
+              ],
+              [
+                -98.356097939352,
+                20.017410690956925
+              ],
+              [
+                -98.35577640022522,
+                20.01731282027526
+              ],
+              [
+                -98.35570049104513,
+                20.01721050879748
+              ],
+              [
+                -98.35577875065282,
+                20.01660719950301
+              ],
+              [
+                -98.35568404858056,
+                20.01524064992478
+              ],
+              [
+                -98.35555848071499,
+                20.014387519670713
+              ],
+              [
+                -98.35558211942327,
+                20.013859768569638
+              ],
+              [
+                -98.35567129011487,
+                20.013088629929296
+              ],
+              [
+                -98.35593637052445,
+                20.01136396942902
+              ],
+              [
+                -98.35605050944999,
+                20.010941659313293
+              ],
+              [
+                -98.35604009012687,
+                20.010464949064954
+              ],
+              [
+                -98.35610631878589,
+                20.01000360071317
+              ],
+              [
+                -98.35594051040351,
+                20.009662910061003
+              ],
+              [
+                -98.35582592063415,
+                20.009346628965467
+              ],
+              [
+                -98.35583985024448,
+                20.00910377016288
+              ],
+              [
+                -98.35596947954441,
+                20.00884914033364
+              ],
+              [
+                -98.35622763064862,
+                20.008643580723863
+              ],
+              [
+                -98.35660174029685,
+                20.008389850433232
+              ],
+              [
+                -98.3567957695617,
+                20.008123350678513
+              ],
+              [
+                -98.3569915195053,
+                20.00743642048081
+              ],
+              [
+                -98.35707091915981,
+                20.006890080144395
+              ],
+              [
+                -98.35708537039267,
+                20.006489290274573
+              ],
+              [
+                -98.35702313992736,
+                20.005966767762814
+              ],
+              [
+                -98.35702427627605,
+                20.005570970855814
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0513",
+        "UGA": 513.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (78ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 15.6ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Bosque de tascate (46.8ha), Vegetación secundaria de Bosque de tascate (31.2ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 78.0,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 2/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1317 Valle de Tulancingo",
+        "DISP_AG_SU": -20.11,
+        "VOL_EXTR": 74.53,
+        "REC_ACUIF": "Moderada",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04,",
+        "CRE_2": "IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF21, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 1.47022200557
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.398337954243,
+                20.021851732131093
+              ],
+              [
+                -98.39860495083953,
+                20.021881980058023
+              ],
+              [
+                -98.39927937049741,
+                20.021950800139873
+              ],
+              [
+                -98.39959838242673,
+                20.022083525530224
+              ],
+              [
+                -98.398337954243,
+                20.021851732131093
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.39319673947651,
+                20.021215870180463
+              ],
+              [
+                -98.39304857494159,
+                20.021260908775474
+              ],
+              [
+                -98.39312078043987,
+                20.021236030014606
+              ],
+              [
+                -98.39319673947651,
+                20.021215870180463
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.39378259057384,
+                20.021104819656127
+              ],
+              [
+                -98.3939755214764,
+                20.021083459616683
+              ],
+              [
+                -98.3941878879046,
+                20.021108828300676
+              ],
+              [
+                -98.39378259057384,
+                20.021104819656127
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.38961143088846,
+                20.01969928892984
+              ],
+              [
+                -98.38968105066618,
+                20.01975502879726
+              ],
+              [
+                -98.38972765026477,
+                20.01981854995252
+              ],
+              [
+                -98.38961143088846,
+                20.01969928892984
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.38921218596516,
+                20.017971336066747
+              ],
+              [
+                -98.38942778163536,
+                20.017448028045248
+              ],
+              [
+                -98.39052330730938,
+                20.016297580219074
+              ],
+              [
+                -98.3897877501608,
+                20.01722846110835
+              ],
+              [
+                -98.38917250602745,
+                20.018065521634234
+              ],
+              [
+                -98.38921218596516,
+                20.017971336066747
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.39206767866794,
+                20.01485321799442
+              ],
+              [
+                -98.39204241950212,
+                20.014904490797143
+              ],
+              [
+                -98.39156311117056,
+                20.015241140514597
+              ],
+              [
+                -98.39102126167167,
+                20.01577466049378
+              ],
+              [
+                -98.3915657718186,
+                20.015202847574898
+              ],
+              [
+                -98.39206767866794,
+                20.01485321799442
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.39357799778773,
+                20.01146362281764
+              ],
+              [
+                -98.39407207157367,
+                20.010763035993694
+              ],
+              [
+                -98.39434189796377,
+                20.01107291491015
+              ],
+              [
+                -98.39405134114027,
+                20.0118732301986
+              ],
+              [
+                -98.39359849127968,
+                20.012191450164305
+              ],
+              [
+                -98.39338593973825,
+                20.01295220014456
+              ],
+              [
+                -98.39297250987106,
+                20.013377739971975
+              ],
+              [
+                -98.3925578831115,
+                20.013917739059828
+              ],
+              [
+                -98.39262578396925,
+                20.013784822302654
+              ],
+              [
+                -98.39254493533507,
+                20.013050483463452
+              ],
+              [
+                -98.39297612706082,
+                20.013143331284894
+              ],
+              [
+                -98.39339833492332,
+                20.012864787625386
+              ],
+              [
+                -98.39338036861764,
+                20.01209668070503
+              ],
+              [
+                -98.39357799778773,
+                20.01146362281764
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0400",
+        "UGA": 400.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (1362.8ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 272.56ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Bosque de pino (1090.2ha), Vegetación secundaria de Bosque de pino (272.6ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 1362.8,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 5/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 5/5, TU 5/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 5/5, HEL 4/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1319 Tecocomulco",
+        "DISP_AG_SU": 25.96,
+        "VOL_EXTR": 2.97,
+        "REC_ACUIF": "Muy alta",
+        "CAPT_CO2": 1047.03,
+        "GRADO_CONS": "Alto",
+        "VAL_CONSER": "Muy alto",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica,",
+        "USO_INCOM2": "Forestal no maderable, Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FM01, FM02, FM03, FM04, FM05, FM06, FM07, FM08, FM09, FM10, FM11, FM12, FM13, FM14, FM15, FM16, FM17, FM18, FM19, FM20, FM21, FM22, FM23, IF01, IF02, IF03, IF04, IF05, IF06,",
+        "CRE_2": "IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E163, E164, E165, E166, E167, E168, E169, E170, E171, E172, E173, E174, E176, E177, E178, E179, E180, E182, E183, E184, E185, E186, E067, E069, E119, E122, E146, E150, E152, E153, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.00856917371
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.35855283295702,
+                19.993717978784893
+              ],
+              [
+                -98.35870248625021,
+                19.993573492851883
+              ],
+              [
+                -98.3586514991653,
+                19.993686320342594
+              ],
+              [
+                -98.35854812392249,
+                19.993773056712293
+              ],
+              [
+                -98.35855283295702,
+                19.993717978784893
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0495",
+        "UGA": 495.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (265.7ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 53.14ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Vegetación secundaria de Bosque de tascate (159.4ha), Bosque de tascate (106.3ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 265.7,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 2/5, TU 5/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1317 Valle de Tulancingo",
+        "DISP_AG_SU": -20.11,
+        "VOL_EXTR": 74.53,
+        "REC_ACUIF": "Muy alta",
+        "CAPT_CO2": 1047.03,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC10, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03,",
+        "CRE_2": "IF04, IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF18, IF19, IF20, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E207, E208, E209, E210, E211, E213, E214, E215, E216, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.10938408865
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.36295066107314,
+                20.011052998465814
+              ],
+              [
+                -98.36512835304384,
+                20.012763499432953
+              ],
+              [
+                -98.3630083285843,
+                20.011185077225658
+              ],
+              [
+                -98.36295066107314,
+                20.011052998465814
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0513",
+        "UGA": 513.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (78ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 15.6ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Bosque de tascate (46.8ha), Vegetación secundaria de Bosque de tascate (31.2ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 78.0,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 2/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1317 Valle de Tulancingo",
+        "DISP_AG_SU": -20.11,
+        "VOL_EXTR": 74.53,
+        "REC_ACUIF": "Moderada",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04,",
+        "CRE_2": "IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF21, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.00103664341
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.38942778163536,
+                20.017448028045248
+              ],
+              [
+                -98.38921218596516,
+                20.017971336066747
+              ],
+              [
+                -98.3892074015988,
+                20.017974641298725
+              ],
+              [
+                -98.38942778163536,
+                20.017448028045248
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0495",
+        "UGA": 495.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (265.7ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 53.14ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Vegetación secundaria de Bosque de tascate (159.4ha), Bosque de tascate (106.3ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 265.7,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 2/5, TU 5/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1317 Valle de Tulancingo",
+        "DISP_AG_SU": -20.11,
+        "VOL_EXTR": 74.53,
+        "REC_ACUIF": "Muy alta",
+        "CAPT_CO2": 1047.03,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC10, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03,",
+        "CRE_2": "IF04, IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF18, IF19, IF20, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E207, E208, E209, E210, E211, E213, E214, E215, E216, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.11364851476
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.35654944197324,
+                20.018216108481667
+              ],
+              [
+                -98.35642111445677,
+                20.018425339597734
+              ],
+              [
+                -98.35641469410136,
+                20.018427118990783
+              ],
+              [
+                -98.35654944197324,
+                20.018216108481667
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.36415817214244,
+                20.01384390693565
+              ],
+              [
+                -98.36502055483331,
+                20.01436722752438
+              ],
+              [
+                -98.36461631292211,
+                20.01421529622506
+              ],
+              [
+                -98.36415817214244,
+                20.01384390693565
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                -98.35783403255083,
+                20.011640879474978
+              ],
+              [
+                -98.35912801954296,
+                20.0122874626573
+              ],
+              [
+                -98.35882217974317,
+                20.01222329186054
+              ],
+              [
+                -98.35783403255083,
+                20.011640879474978
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0495",
+        "UGA": 495.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (265.7ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 53.14ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Vegetación secundaria de Bosque de tascate (159.4ha), Bosque de tascate (106.3ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 265.7,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 2/5, TU 5/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1317 Valle de Tulancingo",
+        "DISP_AG_SU": -20.11,
+        "VOL_EXTR": 74.53,
+        "REC_ACUIF": "Muy alta",
+        "CAPT_CO2": 1047.03,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC10, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03,",
+        "CRE_2": "IF04, IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF18, IF19, IF20, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E207, E208, E209, E210, E211, E213, E214, E215, E216, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.00010053709
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.35641469410136,
+                20.018427118990783
+              ],
+              [
+                -98.35642111445677,
+                20.018425339597734
+              ],
+              [
+                -98.3564011229773,
+                20.018457935620532
+              ],
+              [
+                -98.35641469410136,
+                20.018427118990783
+              ]
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "UGA_CLAVE": "0513",
+        "UGA": 513.0,
+        "POLITICA": "Conservación-restauración",
+        "LINEAMIENT": "Los terrenos forestales (78ha) se gestionan para el desarrollo de los sectores de:",
+        "LINEAMIEN2": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "LINEAMIEN3": "con la posibilidad de realizar cambios de uso de suelo en una superficie máxima de 15.6ha para la creación de infraestructura para esos sectores y los necesarios para la prevención y manejo de incendios forestales y control de plagas forestales.",
+        "LINEAMIEN4": null,
+        "LINEAMIEN5": null,
+        "LINEAMIEN6": null,
+        "LINEAMIEN7": null,
+        "REGION": "Otomí - Tepehua",
+        "USOS_SUELO": "Bosque de tascate (46.8ha), Vegetación secundaria de Bosque de tascate (31.2ha)",
+        "PREF_FOR_H": 0.0,
+        "FORESTAL_H": 78.0,
+        "AGUA_HA": 0.0,
+        "APTITUD_SE": "AC 0/5, AG 0/5, AH 0/5, CO 5/5, FO 4/5, GA 0/5, ID 0/5, IF 3/5, MI 2/5, PE 2/5, PF 2/5, TU 3/5",
+        "RIESGOS_AM": "CAI 0/5, DES 0/5, ERO 3/5, HEL 3/5, HUN 0/5, INU 1/5, SEQ 2/5, TOR 1/5",
+        "ACUIFERO": "1317 Valle de Tulancingo",
+        "DISP_AG_SU": -20.11,
+        "VOL_EXTR": 74.53,
+        "REC_ACUIF": "Moderada",
+        "CAPT_CO2": 0.0,
+        "GRADO_CONS": "Medio",
+        "VAL_CONSER": "Muy bajo",
+        "FRAG_ECOL": "Alta",
+        "USO_CONDIC": "Conservación, Forestal no maderable, Infraestructura, Turismo de naturaleza,",
+        "USO_INCOMP": "Acuícola, Agrícola de riego, Agrícola de temporal, Asentamientos humanos, Energía eólica, Energía fotovoltaica, Forestal maderable,",
+        "USO_INCOM2": "Ganadería, Industrial, Minería metálica, Minería no metálica, Turismo convencional,",
+        "CRE_1": "CC06, CC09, CC11, FF01, FF02, FF03, FF04, FF05, FF06, FF07, FF08, FF09, FF10, FN01, FN02, FN03, FN04, FN05, FN06, FN07, FN08, FN09, FN10, FN11, FN12, FN13, FN14, FN15, FN16, FN17, FN18, FN19, FN20, FN21, FN22, FN23, FN24, FN25, IF01, IF02, IF03, IF04,",
+        "CRE_2": "IF05, IF06, IF07, IF08, IF09, IF10, IF11, IF12, IF13, IF14, IF15, IF16, IF21, TN01, TN02, TN03, TN04, TN05, TN06, TN07, TN08, TN09, TN10, TN11, TN12, TN13, TN14, TN15, TN16, TN17, TN18, TN19, TN20, TN21, TN22, TN23, TN24, TN25, TN26,",
+        "CRE_3": null,
+        "CRE_4": null,
+        "CRE_5": null,
+        "CRE_6": null,
+        "EST_1": "E050, E051, E058, E059, E060, E061, E062, E063, E064, E066, E068, E070, E071, E072, E073, E074, E075, E076, E077, E078, E079, E080, E081, E082, E083, E084, E085, E088, E089, E090, E091, E092, E093, E098, E101, E102, E107, E108, E109, E110, E111, E112,",
+        "EST_2": "E113, E116, E117, E175, E181, E067, E069, E119, E122, E146, E150, E152, E153, E217, E218, E219, E220, E221,",
+        "EST_3": null,
+        "EST_4": null,
+        "NOMBRE_ANP": null,
+        "SUPERFICIE": 0.00036787974
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                -98.3892074015988,
+                20.017974641298725
+              ],
+              [
+                -98.38921218596516,
+                20.017971336066747
+              ],
+              [
+                -98.38917250602745,
+                20.018065521634234
+              ],
+              [
+                -98.38916522094911,
+                20.018075434598703
+              ],
+              [
+                -98.3892074015988,
+                20.017974641298725
+              ]
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
