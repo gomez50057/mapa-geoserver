@@ -5,6 +5,8 @@ import { renderPopupContent } from "@/data/popupSchemas";
 
 const wfsResponseCache = new Map();
 const wfsPendingRequests = new Map();
+const wmsBoundsCache = new Map();
+let wmsCapabilitiesPromise = null;
 
 const PROPERTY_ALIAS_MAP = {
   id: "ID",
@@ -75,6 +77,9 @@ export function createWmsLayer(layerDef, paneId, zIndex) {
     format: "image/png",
     transparent: true,
     tiled: true,
+    tileSize: 256,
+    keepBuffer: 4,
+    updateWhenIdle: true,
     pane: paneId,
     zIndex,
     styles: layerDef.wmsStyleName || "",
@@ -99,6 +104,7 @@ export async function fetchFeatureInfo(map, latlng, layerDef) {
     format: "image/png",
     info_format: GEOSERVER_CONFIG.infoFormat,
     feature_count: GEOSERVER_CONFIG.defaultFeatureCount,
+    buffer: GEOSERVER_CONFIG.queryBuffer,
     x: Math.round(point.x),
     y: Math.round(point.y),
   });
@@ -149,12 +155,112 @@ export async function fetchWfsFeatures(layerDef, options = {}) {
       wfsResponseCache.set(cacheKey, payload);
       return payload;
     })
+    .catch((error) => {
+      throw new Error(`WFS fetch failed for ${layerDef.id}: ${error?.message || error}`);
+    })
     .finally(() => {
       wfsPendingRequests.delete(cacheKey);
     });
 
   wfsPendingRequests.set(cacheKey, request);
   return request;
+}
+
+function getFirstTagText(parent, tagNames) {
+  for (const tagName of tagNames) {
+    const node = parent.getElementsByTagName(tagName)?.[0];
+    const text = node?.textContent?.trim();
+    if (text) return text;
+  }
+  return null;
+}
+
+function parseBoundsFromLayerNode(layerNode) {
+  const exGeo = layerNode.getElementsByTagName("EX_GeographicBoundingBox")?.[0];
+  if (exGeo) {
+    const west = Number(getFirstTagText(exGeo, ["westBoundLongitude"]));
+    const east = Number(getFirstTagText(exGeo, ["eastBoundLongitude"]));
+    const south = Number(getFirstTagText(exGeo, ["southBoundLatitude"]));
+    const north = Number(getFirstTagText(exGeo, ["northBoundLatitude"]));
+    if ([west, east, south, north].every(Number.isFinite)) {
+      return L.latLngBounds([south, west], [north, east]);
+    }
+  }
+
+  const latLon = layerNode.getElementsByTagName("LatLonBoundingBox")?.[0];
+  if (latLon) {
+    const west = Number(latLon.getAttribute("minx"));
+    const east = Number(latLon.getAttribute("maxx"));
+    const south = Number(latLon.getAttribute("miny"));
+    const north = Number(latLon.getAttribute("maxy"));
+    if ([west, east, south, north].every(Number.isFinite)) {
+      return L.latLngBounds([south, west], [north, east]);
+    }
+  }
+
+  const boxes = Array.from(layerNode.getElementsByTagName("BoundingBox") || []);
+  const preferredBox = boxes.find((node) => {
+    const crs = node.getAttribute("CRS") || node.getAttribute("SRS");
+    return crs === "EPSG:4326";
+  });
+
+  if (preferredBox) {
+    const west = Number(preferredBox.getAttribute("minx"));
+    const east = Number(preferredBox.getAttribute("maxx"));
+    const south = Number(preferredBox.getAttribute("miny"));
+    const north = Number(preferredBox.getAttribute("maxy"));
+    if ([west, east, south, north].every(Number.isFinite)) {
+      return L.latLngBounds([south, west], [north, east]);
+    }
+  }
+
+  return null;
+}
+
+async function fetchWmsCapabilities() {
+  if (wmsCapabilitiesPromise) return wmsCapabilitiesPromise;
+
+  const requestUrl = buildServiceUrl(GEOSERVER_CONFIG.wmsUrl, {
+    service: "WMS",
+    request: "GetCapabilities",
+    version: GEOSERVER_CONFIG.wmsVersion,
+  });
+
+  wmsCapabilitiesPromise = fetch(requestUrl)
+    .then(async (response) => {
+      if (!response.ok) throw new Error("WMS GetCapabilities failed");
+      const text = await response.text();
+      const parser = new DOMParser();
+      return parser.parseFromString(text, "text/xml");
+    })
+    .catch((error) => {
+      wmsCapabilitiesPromise = null;
+      throw error;
+    });
+
+  return wmsCapabilitiesPromise;
+}
+
+export async function fetchLayerBounds(layerDef) {
+  const qualifiedName = buildQualifiedLayerName(layerDef);
+  if (wmsBoundsCache.has(qualifiedName)) {
+    return wmsBoundsCache.get(qualifiedName);
+  }
+
+  const capabilities = await fetchWmsCapabilities();
+  const layerNodes = Array.from(capabilities.getElementsByTagName("Layer") || []);
+  const match = layerNodes.find((node) => {
+    const name = getFirstTagText(node, ["Name"]);
+    return name === qualifiedName || name === layerDef.layerName;
+  });
+
+  const bounds = match ? parseBoundsFromLayerNode(match) : null;
+  if (bounds?.isValid?.()) {
+    wmsBoundsCache.set(qualifiedName, bounds);
+    return bounds;
+  }
+
+  return null;
 }
 
 export function buildPointBbox(latlng, radius = 0.003) {
@@ -182,14 +288,29 @@ function normalizeProperties(properties) {
   return normalized;
 }
 
+function normalizeFeature(feature) {
+  if (!feature) return null;
+  return {
+    ...feature,
+    properties: normalizeProperties(feature.properties),
+  };
+}
+
 function normalizeFeatureCollection(featureCollection) {
   return {
     ...featureCollection,
-    features: (featureCollection?.features || []).map((feature) => ({
-      ...feature,
-      properties: normalizeProperties(feature.properties),
-    })),
+    features: (featureCollection?.features || []).map(normalizeFeature),
   };
+}
+
+export async function fetchFeatureAtLatLng(layerDef, latlng, radius = 0.0015) {
+  const collection = await fetchWfsFeatures(layerDef, {
+    bbox: buildPointBbox(latlng, radius),
+    maxFeatures: 1,
+  });
+
+  const feature = normalizeFeature(collection?.features?.[0]);
+  return feature || null;
 }
 
 function buildGenericWfsLayer(normalizedCollection, paneId, layerDef) {

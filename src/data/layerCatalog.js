@@ -68,7 +68,7 @@ function decorateLayer(layer, groupPath) {
   const sourceType =
     SOURCE_TYPE_OVERRIDES[layer.id] ||
     layer.sourceType ||
-    (layer.type === "tile" ? "wms" : "wfs");
+    "wms";
   return {
     ...layer,
     sourceType,

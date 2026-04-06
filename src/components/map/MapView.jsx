@@ -6,17 +6,16 @@ import "leaflet/dist/leaflet.css";
 import LegendDock from "./LegendDock";
 import { GEOSERVER_CONFIG, HIDALGO_REGION_BOUNDS } from "@/config/geoserver";
 import {
-  buildWfsLayer,
   createWmsLayer,
+  fetchFeatureAtLatLng,
   fetchFeatureInfo,
-  fetchWfsFeatures,
+  fetchLayerBounds,
 } from "@/lib/geoserver/client";
 import { loadLegacyLocalLayer } from "@/lib/geoserver/legacyLocalLayers";
 import { renderPopupContent } from "@/data/popupSchemas";
 
 const FALLBACK_BOUNDS = L.latLngBounds(HIDALGO_REGION_BOUNDS[0], HIDALGO_REGION_BOUNDS[1]);
 const clampZ = (z) => Math.max(-9999, Math.min(9999, Math.round(Number(z ?? 400))));
-const vectorPaneIdFromZ = (z) => `pane_vec_${clampZ(z)}`;
 
 function boundsFromConfig(bounds) {
   if (!Array.isArray(bounds) || bounds.length !== 2) return null;
@@ -43,40 +42,17 @@ function ensureTilePane(map, paneRegistryRef, layerId, z) {
   return paneId;
 }
 
-function ensureVectorRenderer(map, rendererRegistryRef, paneId) {
-  let renderer = rendererRegistryRef.current[paneId];
-  if (!renderer) {
-    renderer = L.svg({ pane: paneId });
-    rendererRegistryRef.current[paneId] = renderer;
-  }
-
-  if (!renderer._map) renderer.addTo(map);
-  return renderer;
-}
-
-function bindLayerToPane(layer, paneId, renderer) {
-  if (!layer) return;
-
-  if (layer.options) {
-    layer.options.pane = paneId;
-    layer.options.renderer = renderer;
-  }
-
-  if (typeof layer.eachLayer === "function") {
-    layer.eachLayer((child) => bindLayerToPane(child, paneId, renderer));
-  }
-}
-
 export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }) {
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
   const groupRef = useRef({});
   const paneRef = useRef({});
-  const rendererRef = useRef({});
-  const sourceDataRef = useRef({});
+  const boundsRef = useRef({});
   const lastPaneRef = useRef({});
   const lastOnRef = useRef(new Set());
   const loadTokenRef = useRef(0);
+  const hoverTimerRef = useRef(null);
+  const hoverSeqRef = useRef(0);
 
   const visibleDefs = useMemo(
     () => [...selectedLayers].sort((a, b) => getLayerZ(a, zMap) - getLayerZ(b, zMap)),
@@ -86,7 +62,7 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
   const queryableDefs = useMemo(
     () =>
       [...selectedLayers]
-        .filter((layer) => layer.sourceType === "wms")
+        .filter((layer) => layer.queryMode === "getFeatureInfo" || layer.sourceType === "wms")
         .sort((a, b) => getLayerZ(b, zMap) - getLayerZ(a, zMap)),
     [selectedLayers, zMap]
   );
@@ -121,6 +97,7 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
     const keepInside = () => map.panInsideBounds(FALLBACK_BOUNDS, { animate: false });
     map.on("drag", keepInside);
     map.attributionControl.setPrefix("");
+    map.getContainer().style.cursor = "grab";
 
     const hybrid = L.tileLayer("http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
       ...commonTileOpts,
@@ -158,12 +135,12 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
 
     return () => {
       map.off("drag", keepInside);
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       map.remove();
       mapRef.current = null;
       groupRef.current = {};
       paneRef.current = {};
-      rendererRef.current = {};
-      sourceDataRef.current = {};
+      boundsRef.current = {};
       lastPaneRef.current = {};
       lastOnRef.current = new Set();
     };
@@ -175,32 +152,6 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
 
     let cancelled = false;
     const token = ++loadTokenRef.current;
-
-    const addVectorLayer = async (layerDef, layer, paneId, renderer) => {
-      bindLayerToPane(layer, paneId, renderer);
-
-      try {
-        layer.addTo(map);
-        return layer;
-      } catch (error) {
-        if (layer?.remove) layer.remove();
-
-        const featureCollection = sourceDataRef.current[layerDef.id];
-        if (!featureCollection || layerDef.sourceType !== "wfs") {
-          throw error;
-        }
-
-        console.warn(`Falling back to generic renderer for layer ${layerDef.id}`, error);
-        const fallbackLayer = await buildWfsLayer(featureCollection, paneId, layerDef, {
-          preferLegacyBuilder: false,
-        });
-
-        bindLayerToPane(fallbackLayer, paneId, renderer);
-        fallbackLayer.addTo(map);
-        groupRef.current[layerDef.id] = fallbackLayer;
-        return fallbackLayer;
-      }
-    };
 
     const syncLayers = async () => {
       const currentOn = new Set(visibleDefs.map((layer) => layer.id));
@@ -218,81 +169,69 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
 
         try {
           const z = getLayerZ(layerDef, zMap);
-
-          if (layerDef.sourceType === "wms") {
-            const paneId = ensureTilePane(map, paneRef, layerDef.id, z);
-            let layer = groupRef.current[layerDef.id];
-
-            if (!layer || lastPaneRef.current[layerDef.id] !== paneId) {
-              if (layer && map.hasLayer(layer)) map.removeLayer(layer);
-              layer = createWmsLayer(layerDef, paneId, z);
-              groupRef.current[layerDef.id] = layer;
-              lastPaneRef.current[layerDef.id] = paneId;
-              layer.addTo(map);
-            } else {
-              if (!map.hasLayer(layer)) layer.addTo(map);
-              if (typeof layer.setZIndex === "function") layer.setZIndex(z);
-            }
-
-            if (newLayerIds.includes(layerDef.id) && layerDef.bounds) {
-              const configuredBounds = boundsFromConfig(layerDef.bounds);
-              if (configuredBounds) {
-                unionBounds = unionBounds
-                  ? unionBounds.extend(configuredBounds)
-                  : L.latLngBounds(configuredBounds.getSouthWest(), configuredBounds.getNorthEast());
-              }
-            }
-            continue;
-          }
-
-          const paneId = vectorPaneIdFromZ(z);
-          ensurePane(map, paneRef, paneId, z);
-          const renderer = ensureVectorRenderer(map, rendererRef, paneId);
+          const paneId = ensureTilePane(map, paneRef, layerDef.id, z);
           let layer = groupRef.current[layerDef.id];
 
           if (layer && lastPaneRef.current[layerDef.id] !== paneId) {
             if (map.hasLayer(layer)) map.removeLayer(layer);
-            delete groupRef.current[layerDef.id];
             layer = null;
           }
 
           if (!layer) {
-            if (layerDef.sourceType === "wfs") {
-              const featureCollection =
-                sourceDataRef.current[layerDef.id] ||
-                (await fetchWfsFeatures(layerDef, { maxFeatures: 3000 }));
-              sourceDataRef.current[layerDef.id] = featureCollection;
-              layer = await buildWfsLayer(featureCollection, paneId, layerDef);
-            } else if (layerDef.sourceType === "local" && GEOSERVER_CONFIG.localFallbackEnabled) {
-              layer = await loadLegacyLocalLayer(layerDef, paneId);
-            }
+            layer =
+              layerDef.sourceType === "local" && GEOSERVER_CONFIG.localFallbackEnabled
+                ? await loadLegacyLocalLayer(layerDef, paneId)
+                : createWmsLayer(layerDef, paneId, z);
 
-            if (layer) {
-              groupRef.current[layerDef.id] = layer;
-              lastPaneRef.current[layerDef.id] = paneId;
-              layer = await addVectorLayer(layerDef, layer, paneId, renderer);
-            }
+            if (!layer) continue;
+            groupRef.current[layerDef.id] = layer;
+            lastPaneRef.current[layerDef.id] = paneId;
+            layer.addTo(map);
           } else if (!map.hasLayer(layer)) {
-            layer = await addVectorLayer(layerDef, layer, paneId, renderer);
+            layer.addTo(map);
           }
 
-          if (newLayerIds.includes(layerDef.id) && layer?.getBounds?.()?.isValid?.()) {
-            const bounds = layer.getBounds();
-            unionBounds = unionBounds
-              ? unionBounds.extend(bounds)
-              : L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
+          if (typeof layer.setZIndex === "function") {
+            layer.setZIndex(z);
+          }
+
+          if (newLayerIds.includes(layerDef.id)) {
+            const configuredBounds = boundsFromConfig(layerDef.bounds);
+            const bounds =
+              configuredBounds ||
+              boundsRef.current[layerDef.id] ||
+              (layerDef.sourceType === "local" ? null : await fetchLayerBounds(layerDef));
+            if (bounds?.isValid?.()) {
+              boundsRef.current[layerDef.id] = bounds;
+              unionBounds = unionBounds
+                ? unionBounds.extend(bounds)
+                : L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
+            }
           }
         } catch (error) {
           console.error(`Layer sync failed for ${layerDef.id}`, error);
         }
       }
 
+      if (cancelled || token !== loadTokenRef.current || mapRef.current !== map || !map._loaded) {
+        return;
+      }
+
       if (unionBounds?.isValid?.()) {
-        map.flyToBounds(unionBounds, {
-          padding: [40, 40],
-          maxZoom: 13,
-          duration: 0.7,
-        });
+        try {
+          map.flyToBounds(unionBounds, {
+            padding: [40, 40],
+            maxZoom: 13,
+            duration: 0.7,
+          });
+        } catch (error) {
+          console.warn("Animated flyToBounds failed, falling back to fitBounds", error);
+          map.fitBounds(unionBounds, {
+            padding: [40, 40],
+            maxZoom: 13,
+            animate: false,
+          });
+        }
       }
 
       lastOnRef.current = currentOn;
@@ -311,29 +250,110 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
     const map = mapRef.current;
     if (!map) return undefined;
 
-    const handleClick = async (event) => {
+    const getFallbackRadius = () => {
+      const zoom = map.getZoom();
+      if (zoom >= 17) return 0.00012;
+      if (zoom >= 15) return 0.00025;
+      if (zoom >= 13) return 0.0006;
+      if (zoom >= 11) return 0.0012;
+      return 0.002;
+    };
+
+    const resolveFeatureAtLatLng = async (latlng, options = {}) => {
+      const { allowWfsFallback = true, logErrors = true } = options;
+
       for (const layerDef of queryableDefs) {
         try {
-          const collection = await fetchFeatureInfo(map, event.latlng, layerDef);
+          const collection = await fetchFeatureInfo(map, latlng, layerDef);
           const feature = collection?.features?.[0];
           if (feature?.properties) {
-            L.popup({ maxWidth: 420 })
-              .setLatLng(event.latlng)
-              .setContent(renderPopupContent(layerDef.popupSchema, feature.properties, layerDef))
-              .openOn(map);
-            return;
+            return { feature, layerDef };
           }
         } catch (error) {
-          console.error(`Query error for layer ${layerDef.id}`, error);
+          if (logErrors) {
+            console.error(`Query error for layer ${layerDef.id}`, error);
+          }
         }
+
+        if (!allowWfsFallback) continue;
+
+        try {
+          const fallbackFeature = await fetchFeatureAtLatLng(layerDef, latlng, getFallbackRadius());
+          if (fallbackFeature?.properties) {
+            return { feature: fallbackFeature, layerDef };
+          }
+        } catch (error) {
+          if (logErrors) {
+            console.error(`Fallback query error for layer ${layerDef.id}`, error);
+          }
+        }
+      }
+
+      return null;
+    };
+
+    const handleClick = async (event) => {
+      const result = await resolveFeatureAtLatLng(event.latlng, {
+        allowWfsFallback: true,
+        logErrors: true,
+      });
+      if (result?.feature?.properties) {
+        L.popup({ maxWidth: 420 })
+          .setLatLng(event.latlng)
+          .setContent(renderPopupContent(result.layerDef.popupSchema, result.feature.properties, result.layerDef))
+          .openOn(map);
+        return;
       }
 
       map.closePopup();
     };
 
+    const handleMouseMove = (event) => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      const seq = ++hoverSeqRef.current;
+
+      hoverTimerRef.current = setTimeout(async () => {
+        const result = await resolveFeatureAtLatLng(event.latlng, {
+          allowWfsFallback: false,
+          logErrors: false,
+        });
+        if (seq !== hoverSeqRef.current) return;
+        map.getContainer().style.cursor = result ? "pointer" : "grab";
+      }, 120);
+    };
+
+    const handleMouseOut = () => {
+      hoverSeqRef.current += 1;
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      map.getContainer().style.cursor = "grab";
+    };
+
+    const handleDragStart = () => {
+      hoverSeqRef.current += 1;
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      map.getContainer().style.cursor = "grabbing";
+    };
+
+    const handleDragEnd = () => {
+      map.getContainer().style.cursor = "grab";
+    };
+
     map.on("click", handleClick);
+    map.on("mousemove", handleMouseMove);
+    map.on("mouseout", handleMouseOut);
+    map.on("dragstart", handleDragStart);
+    map.on("dragend", handleDragEnd);
+    map.on("zoomstart", handleDragStart);
+    map.on("zoomend", handleDragEnd);
     return () => {
       map.off("click", handleClick);
+      map.off("mousemove", handleMouseMove);
+      map.off("mouseout", handleMouseOut);
+      map.off("dragstart", handleDragStart);
+      map.off("dragend", handleDragEnd);
+      map.off("zoomstart", handleDragStart);
+      map.off("zoomend", handleDragEnd);
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     };
   }, [queryableDefs]);
 

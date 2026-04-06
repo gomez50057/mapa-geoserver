@@ -15,6 +15,7 @@ export const GEOSERVER_CONFIG = {
   wmsVersion: "1.1.1",
   defaultCrs: "EPSG:3857",
   defaultFeatureCount: 5,
+  queryBuffer: 10,
 };
 
 export function resolveServiceUrl(url) {
