@@ -48,6 +48,12 @@ function buildQualifiedLayerName(layerDef) {
   return layerDef.workspace ? `${layerDef.workspace}:${layerDef.layerName}` : layerDef.layerName;
 }
 
+function resolveLeafletCrs(code) {
+  if (code === "EPSG:3857") return L.CRS.EPSG3857;
+  if (code === "EPSG:4326") return L.CRS.EPSG4326;
+  return null;
+}
+
 function projectBounds(map) {
   const bounds = map.getBounds();
   const crs = map.options.crs;
@@ -72,11 +78,13 @@ function buildServiceUrl(url, params) {
 }
 
 export function createWmsLayer(layerDef, paneId, zIndex) {
-  return L.tileLayer.wms(resolveServiceUrl(GEOSERVER_CONFIG.wmsUrl), {
+  const tileCrs = resolveLeafletCrs(GEOSERVER_CONFIG.tileCrs);
+  return L.tileLayer.wms(resolveServiceUrl(GEOSERVER_CONFIG.tileWmsUrl), {
     layers: buildQualifiedLayerName(layerDef),
     format: layerDef.wmsFormat || GEOSERVER_CONFIG.overlayFormat,
     transparent: true,
     tiled: true,
+    uppercase: true,
     tileSize: GEOSERVER_CONFIG.wmsTileSize,
     keepBuffer: GEOSERVER_CONFIG.wmsKeepBuffer,
     updateWhenIdle: GEOSERVER_CONFIG.wmsUpdateWhenIdle,
@@ -89,6 +97,9 @@ export function createWmsLayer(layerDef, paneId, zIndex) {
     zIndex,
     styles: layerDef.wmsStyleName || "",
     version: GEOSERVER_CONFIG.wmsVersion,
+    srs: GEOSERVER_CONFIG.tileCrs,
+    crs: tileCrs || undefined,
+    tilesorigin: GEOSERVER_CONFIG.tileGridOrigin,
   });
 }
 

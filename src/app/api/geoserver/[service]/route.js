@@ -1,4 +1,8 @@
 const SERVICE_TARGETS = {
+  tilewms:
+    process.env.GEOSERVER_REMOTE_TILE_WMS_URL ||
+    process.env.GEOSERVER_REMOTE_WMS_URL ||
+    "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wms",
   wms:
     process.env.GEOSERVER_REMOTE_WMS_URL ||
     "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wms",
@@ -33,14 +37,22 @@ export async function GET(request, context) {
     headers: {
       Accept: request.headers.get("accept") || "*/*",
     },
-    cache: "no-store",
+    ...(service === "tilewms" ? {} : { cache: "no-store" }),
   });
 
   const headers = new Headers();
-  const contentType = upstream.headers.get("content-type");
-  if (contentType) headers.set("content-type", contentType);
-  const cacheControl = upstream.headers.get("cache-control");
-  if (cacheControl) headers.set("cache-control", cacheControl);
+  [
+    "content-type",
+    "cache-control",
+    "etag",
+    "last-modified",
+    "expires",
+    "vary",
+    "content-length",
+  ].forEach((headerName) => {
+    const value = upstream.headers.get(headerName);
+    if (value) headers.set(headerName, value);
+  });
 
   return new Response(upstream.body, {
     status: upstream.status,
