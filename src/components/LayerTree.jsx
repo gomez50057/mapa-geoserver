@@ -106,6 +106,7 @@ function Node({
   node,
   level = 1,
   selected = new Set(),
+  layerLoadState = {},
   onToggle = () => { },
   onToggleMany = () => { },
   onZUp,
@@ -155,6 +156,7 @@ function Node({
               node={ch}
               level={Math.min(level + 1, 4)}
               selected={selected}
+              layerLoadState={layerLoadState}
               onToggle={onToggle}
               onToggleMany={onToggleMany}
               onZUp={onZUp}
@@ -170,6 +172,7 @@ function Node({
           {hasLayers && node.layers.map((layer) => {
             const isOn = selected.has(layer.id);
             const currentZ = zMap?.[layer.id] ?? (layer.defaultZ ?? 400);
+            const status = layerLoadState[layer.id]?.status || "idle";
             return (
               <div key={layer.id} className={styles.leaf}>
                 <input
@@ -178,6 +181,11 @@ function Node({
                   onChange={() => onToggle(layer)}
                 />
                 <span>{layer.name}</span>
+                {isOn && (
+                  <span className={`${styles.stateBadge} ${styles[`state_${status}`] || ""}`}>
+                    {status === "loading" ? "cargando" : status === "ready" ? "lista" : status === "error" ? "error" : "inactiva"}
+                  </span>
+                )}
                 <span className={styles.zval}>z:{currentZ}</span>
 
                 <ToolsMenu
@@ -200,10 +208,16 @@ function Node({
   // Hoja suelta
   const isOn = selected.has(node.id);
   const currentZ = zMap?.[node.id] ?? (node.defaultZ ?? 400);
+  const status = layerLoadState[node.id]?.status || "idle";
   return (
     <div className={styles.leaf}>
       <input type="checkbox" checked={isOn} onChange={() => onToggle(node)} />
       <span>{node.name}</span>
+      {isOn && (
+        <span className={`${styles.stateBadge} ${styles[`state_${status}`] || ""}`}>
+          {status === "loading" ? "cargando" : status === "ready" ? "lista" : status === "error" ? "error" : "inactiva"}
+        </span>
+      )}
       <span className={styles.zval}>z:{currentZ}</span>
       <ToolsMenu
         id={node.id}
@@ -222,6 +236,8 @@ function Node({
 export default function LayerTree({
   tree = [],
   selected = new Set(),
+  layerLoadState = {},
+  loadingSummary = null,
   onToggle = () => { },
   onToggleMany = () => { },
   onZUp = () => { },
@@ -233,12 +249,24 @@ export default function LayerTree({
 }) {
   return (
     <aside className={styles.sidebar}>
+      {loadingSummary?.total > 0 && (
+        <div className={styles.loadingSummary}>
+          <strong>Catálogo activo</strong>
+          <span>
+            {loadingSummary.ready} / {loadingSummary.total} capas listas
+          </span>
+          {loadingSummary.pending > 0 && <span>{loadingSummary.pending} preparando...</span>}
+          {loadingSummary.loading > 0 && <span>{loadingSummary.loading} cargando...</span>}
+          {loadingSummary.error > 0 && <span>{loadingSummary.error} con error</span>}
+        </div>
+      )}
       {tree.map((root) => (
         <Node
           key={root.id || root.name}
           node={root}
           level={1}
           selected={selected}
+          layerLoadState={layerLoadState}
           onToggle={onToggle}
           onToggleMany={onToggleMany}
           onZUp={onZUp}

@@ -9,6 +9,7 @@ export function useLayerSelection(tree) {
 
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [zOverrides, setZOverrides] = useState(() => new Map());
+  const [opacityOverrides, setOpacityOverrides] = useState(() => new Map());
   const legendSeq = useRef(0);
   const [legendByKey, setLegendByKey] = useState(() => new Map());
 
@@ -219,6 +220,30 @@ export function useLayerSelection(tree) {
     });
   };
 
+  const setLayerOpacity = (id, value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return;
+    const clamped = Math.max(0, Math.min(1, numeric));
+
+    setOpacityOverrides((previous) => {
+      const next = new Map(previous);
+      next.set(id, clamped);
+      return next;
+    });
+  };
+
+  const setManyLayerOpacity = (ids, value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return;
+    const clamped = Math.max(0, Math.min(1, numeric));
+
+    setOpacityOverrides((previous) => {
+      const next = new Map(previous);
+      ids.forEach((id) => next.set(id, clamped));
+      return next;
+    });
+  };
+
   const selectedLayers = useMemo(
     () => [...selectedIds].map((id) => layerIndex[id]).filter(Boolean),
     [layerIndex, selectedIds]
@@ -230,6 +255,14 @@ export function useLayerSelection(tree) {
         selectedLayers.map((layer) => [layer.id, zOverrides.get(layer.id) ?? layer.defaultZ ?? 400])
       ),
     [selectedLayers, zOverrides]
+  );
+
+  const opacityMap = useMemo(
+    () =>
+      Object.fromEntries(
+        selectedLayers.map((layer) => [layer.id, opacityOverrides.get(layer.id) ?? 1])
+      ),
+    [opacityOverrides, selectedLayers]
   );
 
   const legendList = useMemo(
@@ -258,5 +291,8 @@ export function useLayerSelection(tree) {
     moveTop,
     moveBottom,
     setZExact,
+    opacityMap,
+    setLayerOpacity,
+    setManyLayerOpacity,
   };
 }

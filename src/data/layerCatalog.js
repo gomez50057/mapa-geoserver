@@ -1,83 +1,34 @@
 import { GEOSERVER_CONFIG } from "@/config/geoserver";
-
-const POPUP_SCHEMA_OVERRIDES = {
-  hgo_info_gen: "hidalgoInfo",
-  esc_priv_ms: "escuelaPrivada",
-  zmvm_info: "zonaMetropolitana",
-  zmpachuca_info: "zonaMetropolitana",
-  zmtula_info: "zonaMetropolitana",
-  zmtulancingo_info: "zonaMetropolitana",
-};
-
-const SOURCE_TYPE_OVERRIDES = {};
-const LAYER_NAME_OVERRIDES = {
-  hgo_info_gen: "hgoinfogen",
-  esc_priv_ms: "escmediasupprivada",
-  definicion_de_limites_santiagotlg: "definicionlimites",
-  zona_arqueologica_zazacuala: "zonaarqueologica",
-};
-
-function slugify(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .replace(/_+/g, "_")
-    .toLowerCase();
-}
-
-function guessPopupSchema(layer, groupPath) {
-  if (POPUP_SCHEMA_OVERRIDES[layer.id]) return POPUP_SCHEMA_OVERRIDES[layer.id];
-  if (layer.legendKey === "PMDU_Pachuca") return "pachucaEtapas";
-  if (layer.legendKey?.startsWith("PMDU_")) return "pmduGeneric";
-  if (groupPath.some((segment) => segment.toLowerCase().includes("pmdu"))) return "pmduGeneric";
-  if (groupPath.some((segment) => segment.toLowerCase().includes("metropolitana"))) return "zonaMetropolitana";
-  return "default";
-}
-
-function guessGeometryType(layer) {
-  if (layer.geometryType) return layer.geometryType;
-  if (layer.meta?.asLine) return "LineString";
-  if (layer.id === "esc_priv_ms") return "Point";
-  return "Polygon";
-}
-
-function guessStyleRef(layer) {
-  if (layer.styleRef) return layer.styleRef;
-  return slugify(layer.legendKey || layer.legendTitle || layer.name || layer.id);
-}
-
-function buildLayerName(layer) {
-  if (LAYER_NAME_OVERRIDES[layer.id]) return LAYER_NAME_OVERRIDES[layer.id];
-  if (layer.layerName) return layer.layerName;
-  return slugify(layer.geojsonId || layer.id);
-}
+import {
+  buildLayerBehavior,
+  buildLayerName,
+  guessGeometryType,
+  guessStyleRef,
+} from "./layerBehaviors";
 
 function buildWorkspace(layer) {
   if (layer.workspace) return layer.workspace;
   return GEOSERVER_CONFIG.workspace;
 }
 
-function buildQueryMode(layer) {
-  if (layer.queryMode) return layer.queryMode;
-  return layer.sourceType === "wms" ? "getFeatureInfo" : "wfs";
-}
-
 function decorateLayer(layer, groupPath) {
-  const sourceType =
-    SOURCE_TYPE_OVERRIDES[layer.id] ||
-    layer.sourceType ||
-    "wms";
+  const behavior = buildLayerBehavior(layer, groupPath);
+  const sourceType = behavior.sourceType;
   return {
     ...layer,
+    behavior,
     sourceType,
+    renderMode: behavior.renderMode,
     workspace: buildWorkspace(layer),
     layerName: buildLayerName(layer),
     title: layer.title || layer.name,
     groupPath,
-    popupSchema: layer.popupSchema || guessPopupSchema(layer, groupPath),
-    queryMode: layer.queryMode || (sourceType === "wms" ? "getFeatureInfo" : "wfs"),
+    popupSchema: behavior.popupSchema,
+    queryMode: behavior.queryMode,
+    hoverMode: behavior.hoverMode,
+    clickFallbackMode: behavior.clickFallbackMode,
+    boundsMode: behavior.boundsMode,
+    fitOnEnable: behavior.fitOnEnable,
     bounds: layer.bounds || null,
     styleRef: guessStyleRef(layer),
     geometryType: guessGeometryType(layer),
@@ -127,6 +78,9 @@ export function buildLayerMigrationTable(tree) {
     workspace: layer.workspace,
     layerName: layer.layerName,
     sourceType: layer.sourceType,
+    renderMode: layer.renderMode,
+    queryMode: layer.queryMode,
+    boundsMode: layer.boundsMode,
     styleRef: layer.styleRef,
     popupSchema: layer.popupSchema,
     migrationStatus: layer.migrationStatus,

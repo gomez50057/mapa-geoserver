@@ -5,12 +5,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import LegendDock from "./LegendDock";
 import { GEOSERVER_CONFIG, HIDALGO_REGION_BOUNDS } from "@/config/geoserver";
-import {
-  createWmsLayer,
-  fetchFeatureAtLatLng,
-  fetchFeatureInfo,
-  fetchLayerBounds,
-} from "@/lib/geoserver/client";
+import { createWmsLayer } from "@/lib/geoserver/client";
+import { resolveTopmostFeatureAtLatLng } from "@/lib/geoserver/interaction";
+import { extendUnionBounds, resolveLayerBounds } from "@/lib/geoserver/runtime";
 import { loadLegacyLocalLayer } from "@/lib/geoserver/legacyLocalLayers";
 import { renderPopupContent } from "@/data/popupSchemas";
 
@@ -24,6 +21,12 @@ function boundsFromConfig(bounds) {
 
 function getLayerZ(layerDef, zMap) {
   return zMap?.[layerDef.id] ?? layerDef.defaultZ ?? 400;
+}
+
+function getLayerOpacity(layerDef, layerOpacityMap) {
+  const raw = layerOpacityMap?.[layerDef.id];
+  if (raw == null) return 1;
+  return Math.max(0, Math.min(1, Number(raw)));
 }
 
 function ensurePane(map, paneRegistryRef, paneId, z) {
@@ -42,7 +45,88 @@ function ensureTilePane(map, paneRegistryRef, layerId, z) {
   return paneId;
 }
 
-export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }) {
+function applyLayerOpacity(layer, opacity) {
+  if (!layer) return;
+  if (typeof layer.setOpacity === "function") {
+    layer.setOpacity(opacity);
+    return;
+  }
+
+  if (typeof layer.setStyle === "function") {
+    layer.setStyle({ opacity, fillOpacity: Math.min(opacity, 1) * 0.6 });
+    return;
+  }
+
+  if (typeof layer.eachLayer === "function") {
+    layer.eachLayer((child) => applyLayerOpacity(child, opacity));
+  }
+}
+
+function setLayerContainerVisibility(layer, visible) {
+  const container = layer?.getContainer?.();
+  if (!container) return;
+  container.style.visibility = visible ? "visible" : "hidden";
+  container.style.pointerEvents = "none";
+}
+
+function showLayer(layer, opacity, zIndex) {
+  applyLayerOpacity(layer, opacity);
+  setLayerContainerVisibility(layer, opacity > 0);
+  if (typeof layer.setZIndex === "function") {
+    layer.setZIndex(zIndex);
+  }
+  if (typeof layer.bringToFront === "function") {
+    layer.bringToFront();
+  }
+  layer.__codexVisible = opacity > 0;
+}
+
+function hideLayer(layer) {
+  applyLayerOpacity(layer, 0);
+  setLayerContainerVisibility(layer, false);
+  layer.__codexVisible = false;
+}
+
+async function waitForLayerReady(layer) {
+  if (!layer) return;
+  if (layer.__codexReady) return;
+
+  if (typeof layer.isLoading === "function" && !layer.isLoading()) {
+    layer.__codexReady = true;
+    return;
+  }
+
+  await new Promise((resolve) => {
+    let settled = false;
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      layer.off?.("load", handleDone);
+      layer.off?.("tileerror", handleDone);
+    };
+    const handleDone = () => {
+      if (settled) return;
+      settled = true;
+      layer.__codexReady = true;
+      cleanup();
+      resolve();
+    };
+    const timeoutId = window.setTimeout(handleDone, 1800);
+    layer.once?.("load", handleDone);
+    layer.once?.("tileerror", handleDone);
+  });
+}
+
+export default function MapView({
+  selectedLayers = [],
+  zMap = {},
+  legends = [],
+  layerOpacityMap = {},
+  layerLoadState = {},
+  loadingSummary = null,
+  onLayerStatusChange = () => {},
+  onLayerOpacityChange = () => {},
+  onManyLayerOpacityChange = () => {},
+}) {
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
   const groupRef = useRef({});
@@ -62,9 +146,21 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
   const queryableDefs = useMemo(
     () =>
       [...selectedLayers]
-        .filter((layer) => layer.queryMode === "getFeatureInfo" || layer.sourceType === "wms")
+        .filter((layer) => getLayerOpacity(layer, layerOpacityMap) > 0.01)
+        .filter((layer) => layerLoadState[layer.id]?.status === "ready")
+        .filter((layer) => layer.queryMode !== "none")
         .sort((a, b) => getLayerZ(b, zMap) - getLayerZ(a, zMap)),
-    [selectedLayers, zMap]
+    [layerLoadState, layerOpacityMap, selectedLayers, zMap]
+  );
+
+  const hoverableDefs = useMemo(
+    () =>
+      [...selectedLayers]
+        .filter((layer) => getLayerOpacity(layer, layerOpacityMap) > 0.01)
+        .filter((layer) => layerLoadState[layer.id]?.status === "ready")
+        .filter((layer) => layer.hoverMode && layer.hoverMode !== "none")
+        .sort((a, b) => getLayerZ(b, zMap) - getLayerZ(a, zMap)),
+    [layerLoadState, layerOpacityMap, selectedLayers, zMap]
   );
 
   useEffect(() => {
@@ -161,7 +257,8 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
       Object.keys(groupRef.current).forEach((id) => {
         if (currentOn.has(id)) return;
         const layer = groupRef.current[id];
-        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+        if (layer) hideLayer(layer);
+        onLayerStatusChange(id, { status: "idle", message: "" });
       });
 
       for (const layerDef of visibleDefs) {
@@ -169,6 +266,7 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
 
         try {
           const z = getLayerZ(layerDef, zMap);
+          const opacity = getLayerOpacity(layerDef, layerOpacityMap);
           const paneId = ensureTilePane(map, paneRef, layerDef.id, z);
           let layer = groupRef.current[layerDef.id];
 
@@ -178,6 +276,7 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
           }
 
           if (!layer) {
+            onLayerStatusChange(layerDef.id, { status: "loading", message: "Cargando capa..." });
             layer =
               layerDef.sourceType === "local" && GEOSERVER_CONFIG.localFallbackEnabled
                 ? await loadLegacyLocalLayer(layerDef, paneId)
@@ -187,28 +286,32 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
             groupRef.current[layerDef.id] = layer;
             lastPaneRef.current[layerDef.id] = paneId;
             layer.addTo(map);
+            await waitForLayerReady(layer);
+            if (cancelled || token !== loadTokenRef.current) return;
           } else if (!map.hasLayer(layer)) {
             layer.addTo(map);
           }
 
-          if (typeof layer.setZIndex === "function") {
-            layer.setZIndex(z);
+          showLayer(layer, opacity, z);
+          if (layer.__codexReady) {
+            onLayerStatusChange(layerDef.id, { status: "ready", message: "" });
+          } else {
+            onLayerStatusChange(layerDef.id, { status: "loading", message: "Preparando consulta..." });
           }
 
-          if (newLayerIds.includes(layerDef.id)) {
-            const configuredBounds = boundsFromConfig(layerDef.bounds);
-            const bounds =
-              configuredBounds ||
-              boundsRef.current[layerDef.id] ||
-              (layerDef.sourceType === "local" ? null : await fetchLayerBounds(layerDef));
-            if (bounds?.isValid?.()) {
-              boundsRef.current[layerDef.id] = bounds;
-              unionBounds = unionBounds
-                ? unionBounds.extend(bounds)
-                : L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
-            }
+          if (newLayerIds.includes(layerDef.id) && layerDef.fitOnEnable !== false) {
+            const bounds = await resolveLayerBounds({
+              layerDef,
+              boundsCache: boundsRef,
+              boundsFromConfig,
+            });
+            unionBounds = extendUnionBounds(unionBounds, bounds);
           }
         } catch (error) {
+          onLayerStatusChange(layerDef.id, {
+            status: "error",
+            message: error?.message || "No se pudo cargar la capa",
+          });
           console.error(`Layer sync failed for ${layerDef.id}`, error);
         }
       }
@@ -244,56 +347,17 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
     return () => {
       cancelled = true;
     };
-  }, [visibleDefs, zMap]);
+  }, [layerOpacityMap, onLayerStatusChange, visibleDefs, zMap]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return undefined;
 
-    const getFallbackRadius = () => {
-      const zoom = map.getZoom();
-      if (zoom >= 17) return 0.00012;
-      if (zoom >= 15) return 0.00025;
-      if (zoom >= 13) return 0.0006;
-      if (zoom >= 11) return 0.0012;
-      return 0.002;
-    };
-
-    const resolveFeatureAtLatLng = async (latlng, options = {}) => {
-      const { allowWfsFallback = true, logErrors = true } = options;
-
-      for (const layerDef of queryableDefs) {
-        try {
-          const collection = await fetchFeatureInfo(map, latlng, layerDef);
-          const feature = collection?.features?.[0];
-          if (feature?.properties) {
-            return { feature, layerDef };
-          }
-        } catch (error) {
-          if (logErrors) {
-            console.error(`Query error for layer ${layerDef.id}`, error);
-          }
-        }
-
-        if (!allowWfsFallback) continue;
-
-        try {
-          const fallbackFeature = await fetchFeatureAtLatLng(layerDef, latlng, getFallbackRadius());
-          if (fallbackFeature?.properties) {
-            return { feature: fallbackFeature, layerDef };
-          }
-        } catch (error) {
-          if (logErrors) {
-            console.error(`Fallback query error for layer ${layerDef.id}`, error);
-          }
-        }
-      }
-
-      return null;
-    };
-
     const handleClick = async (event) => {
-      const result = await resolveFeatureAtLatLng(event.latlng, {
+      const result = await resolveTopmostFeatureAtLatLng({
+        map,
+        latlng: event.latlng,
+        layers: queryableDefs,
         allowWfsFallback: true,
         logErrors: true,
       });
@@ -313,7 +377,10 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
       const seq = ++hoverSeqRef.current;
 
       hoverTimerRef.current = setTimeout(async () => {
-        const result = await resolveFeatureAtLatLng(event.latlng, {
+        const result = await resolveTopmostFeatureAtLatLng({
+          map,
+          latlng: event.latlng,
+          layers: hoverableDefs,
           allowWfsFallback: false,
           logErrors: false,
         });
@@ -355,12 +422,51 @@ export default function MapView({ selectedLayers = [], zMap = {}, legends = [] }
       map.off("zoomend", handleDragEnd);
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     };
-  }, [queryableDefs]);
+  }, [hoverableDefs, queryableDefs]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      {loadingSummary?.total > 0 && loadingSummary.isBusy && (
+        <div
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            zIndex: 20001,
+            padding: "10px 14px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.92)",
+            border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
+            fontSize: 12,
+            color: "#333",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <strong style={{ display: "block", marginBottom: 4 }}>Cargando catálogo</strong>
+          <span>
+            {loadingSummary.ready} / {loadingSummary.total} capas listas
+          </span>
+          {loadingSummary.pending > 0 && (
+            <span style={{ display: "block", marginTop: 2 }}>
+              {loadingSummary.pending} preparando consulta...
+            </span>
+          )}
+          {loadingSummary.loading > 0 && (
+            <span style={{ display: "block", marginTop: 2 }}>
+              {loadingSummary.loading} en carga...
+            </span>
+          )}
+        </div>
+      )}
       <div ref={mapDivRef} id="map" style={{ width: "100%", height: "100%" }} />
-      <LegendDock legends={legends} />
+      <LegendDock
+        legends={legends}
+        activeLayers={visibleDefs}
+        layerOpacityMap={layerOpacityMap}
+        onLayerOpacityChange={onLayerOpacityChange}
+        onManyLayerOpacityChange={onManyLayerOpacityChange}
+      />
     </div>
   );
 }

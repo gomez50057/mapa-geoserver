@@ -16,6 +16,19 @@
   z-index: 99999;
 }
 
+.loadingSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 12px 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+}
+
 /* Scrollbar (WebKit) */
 .sidebar::-webkit-scrollbar {
   width: 10px;
@@ -90,6 +103,31 @@ details[open]>.summary::before {
   margin-left: 18px;
   border-radius: 10px;
   transition: background .15s ease, box-shadow .15s ease;
+}
+
+.stateBadge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.4;
+  background: #eef1f5;
+  color: #4d4d4d;
+  text-transform: lowercase;
+}
+
+.state_loading {
+  background: #fff3cd;
+  color: #7a5a00;
+}
+
+.state_ready {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.state_error {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .leaf:hover {
