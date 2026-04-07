@@ -149,6 +149,9 @@ export default function MapView({
   const [mosaicStatus, setMosaicStatus] = useState({
     pendingLayers: 0,
     pendingTiles: 0,
+    requestedTiles: 0,
+    settledTiles: 0,
+    progress: 1,
     isUpdating: false,
   });
 
@@ -183,27 +186,39 @@ export default function MapView({
     mosaicStatusFrameRef.current = requestAnimationFrame(() => {
       let pendingLayers = 0;
       let pendingTiles = 0;
+      let requestedTiles = 0;
+      let settledTiles = 0;
 
       visibleIdsRef.current.forEach((layerId) => {
         const layerState = tileStateRef.current[layerId];
         if (!layerState) return;
 
         pendingTiles += layerState.pendingTiles || 0;
+        requestedTiles += layerState.requestedTiles || 0;
+        settledTiles += layerState.settledTiles || 0;
         if (layerState.isUpdating || (layerState.pendingTiles || 0) > 0) {
           pendingLayers += 1;
         }
       });
 
+      const progress = requestedTiles > 0 ? Math.min(1, settledTiles / requestedTiles) : 1;
+
       setMosaicStatus((previous) => {
         const next = {
           pendingLayers,
           pendingTiles,
+          requestedTiles,
+          settledTiles,
+          progress,
           isUpdating: pendingLayers > 0 || pendingTiles > 0,
         };
 
         if (
           previous.pendingLayers === next.pendingLayers &&
           previous.pendingTiles === next.pendingTiles &&
+          previous.requestedTiles === next.requestedTiles &&
+          previous.settledTiles === next.settledTiles &&
+          previous.progress === next.progress &&
           previous.isUpdating === next.isUpdating
         ) {
           return previous;
@@ -219,6 +234,8 @@ export default function MapView({
 
     const layerState = (tileStateRef.current[layerDef.id] = {
       pendingTiles: 0,
+      requestedTiles: 0,
+      settledTiles: 0,
       isUpdating: false,
     });
 
@@ -227,24 +244,60 @@ export default function MapView({
       syncMosaicStatus();
     };
 
-    layer.on("loading", () => updateState({ isUpdating: true }));
-    layer.on("load", () => updateState({ isUpdating: false, pendingTiles: 0 }));
-    layer.on("tileloadstart", () =>
+    layer.on("loading", () =>
+      updateState({
+        isUpdating: true,
+        pendingTiles: 0,
+        requestedTiles: 0,
+        settledTiles: 0,
+      })
+    );
+    layer.on("load", () =>
+      updateState({
+        isUpdating: false,
+        pendingTiles: 0,
+        settledTiles: Math.max(layerState.settledTiles || 0, layerState.requestedTiles || 0),
+      })
+    );
+    layer.on("tileloadstart", (event) => {
+      const tile = event?.tile;
+      if (tile) {
+        tile.decoding = "async";
+        tile.loading = "eager";
+        tile.classList.remove("codex-tile-loaded", "codex-tile-error");
+        tile.classList.add("codex-tile-loading");
+      }
+
       updateState({
         isUpdating: true,
         pendingTiles: (layerState.pendingTiles || 0) + 1,
-      })
-    );
-    layer.on("tileload", () =>
+        requestedTiles: (layerState.requestedTiles || 0) + 1,
+      });
+    });
+    layer.on("tileload", (event) => {
+      const tile = event?.tile;
+      if (tile) {
+        tile.classList.remove("codex-tile-loading", "codex-tile-error");
+        tile.classList.add("codex-tile-loaded");
+      }
+
       updateState({
         pendingTiles: Math.max(0, (layerState.pendingTiles || 0) - 1),
-      })
-    );
-    layer.on("tileerror", () =>
+        settledTiles: (layerState.settledTiles || 0) + 1,
+      });
+    });
+    layer.on("tileerror", (event) => {
+      const tile = event?.tile;
+      if (tile) {
+        tile.classList.remove("codex-tile-loading", "codex-tile-loaded");
+        tile.classList.add("codex-tile-error");
+      }
+
       updateState({
         pendingTiles: Math.max(0, (layerState.pendingTiles || 0) - 1),
-      })
-    );
+        settledTiles: (layerState.settledTiles || 0) + 1,
+      });
+    });
 
     layer.__codexTileProgressBound = true;
   }, [syncMosaicStatus]);
@@ -328,25 +381,23 @@ export default function MapView({
       bounds: FALLBACK_BOUNDS,
     };
 
-    const keepInside = () => map.panInsideBounds(FALLBACK_BOUNDS, { animate: false });
-    map.on("drag", keepInside);
     map.attributionControl.setPrefix("");
     map.getContainer().style.cursor = "grab";
 
-    const hybrid = L.tileLayer("http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
+    const hybrid = L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
       ...commonTileOpts,
       subdomains: ["mt0", "mt1", "mt2", "mt3"],
     }).addTo(map);
     const dark = L.tileLayer("https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", commonTileOpts);
-    const satellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+    const satellite = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
       ...commonTileOpts,
       subdomains: ["mt0", "mt1", "mt2", "mt3"],
     });
-    const relief = L.tileLayer("http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}", {
+    const relief = L.tileLayer("https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}", {
       ...commonTileOpts,
       subdomains: ["mt0", "mt1", "mt2", "mt3"],
     });
-    const roads = L.tileLayer("http://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}", {
+    const roads = L.tileLayer("https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}", {
       ...commonTileOpts,
       subdomains: ["mt0", "mt1", "mt2", "mt3"],
     });
@@ -368,7 +419,6 @@ export default function MapView({
     mapRef.current = map;
 
     return () => {
-      map.off("drag", keepInside);
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       map.remove();
       mapRef.current = null;
@@ -666,6 +716,26 @@ export default function MapView({
           />
           <span style={{ fontSize: 12.5, lineHeight: 1.2 }}>
             Actualizando mosaicos: {mosaicStatus.pendingLayers} capa{mosaicStatus.pendingLayers === 1 ? "" : "s"} y {mosaicStatus.pendingTiles} tesela{mosaicStatus.pendingTiles === 1 ? "" : "s"}
+          </span>
+          <span
+            style={{
+              width: 120,
+              height: 6,
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.18)",
+              overflow: "hidden",
+            }}
+          >
+            <span
+              style={{
+                display: "block",
+                width: `${Math.max(8, Math.round((mosaicStatus.progress || 0) * 100))}%`,
+                height: "100%",
+                borderRadius: 999,
+                background: "linear-gradient(90deg, #dec9a3, #bc955b)",
+                transition: "width 140ms ease-out",
+              }}
+            />
           </span>
         </div>
       )}
