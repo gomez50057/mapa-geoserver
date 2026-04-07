@@ -115,6 +115,7 @@ export default function LegendDock({
   layerOpacityMap = {},
   onLayerOpacityChange = () => {},
   onManyLayerOpacityChange = () => {},
+  style = {},
 }) {
   const hasLegends = Array.isArray(legends) && legends.length > 0;
   const hasActiveLayers = Array.isArray(activeLayers) && activeLayers.length > 0;
@@ -152,15 +153,13 @@ export default function LegendDock({
   return (
     <div
       style={{
-        position: "absolute",
-        right: 12,
-        bottom: 12,
         display: "flex",
         flexDirection: "column",
         gap: 10,
         maxHeight: "60vh",
         overflowY: "auto",
         zIndex: 9999,
+        ...style,
       }}
     >
       {hasLegends && (

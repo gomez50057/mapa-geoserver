@@ -13,6 +13,18 @@ import { renderPopupContent } from "@/data/popupSchemas";
 
 const FALLBACK_BOUNDS = L.latLngBounds(HIDALGO_REGION_BOUNDS[0], HIDALGO_REGION_BOUNDS[1]);
 const clampZ = (z) => Math.max(-9999, Math.min(9999, Math.round(Number(z ?? 400))));
+const COORDINATE_DECIMALS = 7;
+
+function formatCoordinatePair(latlng) {
+  if (!latlng) return "20.0830998, -98.7948132";
+  return `${Number(latlng.lat).toFixed(COORDINATE_DECIMALS)}, ${Number(latlng.lng).toFixed(COORDINATE_DECIMALS)}`;
+}
+
+function clampMenuPosition(point, menuSize, containerSize) {
+  const left = Math.max(12, Math.min(point.x - menuSize.width + 22, containerSize.x - menuSize.width - 12));
+  const top = Math.max(12, Math.min(point.y - menuSize.height - 14, containerSize.y - menuSize.height - 12));
+  return { left, top };
+}
 
 function boundsFromConfig(bounds) {
   if (!Array.isArray(bounds) || bounds.length !== 2) return null;
@@ -154,6 +166,8 @@ export default function MapView({
     progress: 1,
     isUpdating: false,
   });
+  const [mouseCoordinates, setMouseCoordinates] = useState(formatCoordinatePair(null));
+  const [contextMenuState, setContextMenuState] = useState(null);
 
   const visibleDefs = useMemo(
     () => [...selectedLayers].sort((a, b) => getLayerZ(a, zMap) - getLayerZ(b, zMap)),
@@ -306,6 +320,35 @@ export default function MapView({
     controllerRef.current?.abort?.();
     controllerRef.current = null;
   };
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenuState(null);
+  }, []);
+
+  const copyCoordinates = useCallback(async (coordsText) => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(coordsText);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = coordsText;
+        input.setAttribute("readonly", "");
+        input.style.position = "absolute";
+        input.style.left = "-9999px";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+
+      setContextMenuState((current) => (current ? { ...current, copied: true } : current));
+      window.setTimeout(() => {
+        setContextMenuState((current) => (current ? { ...current, copied: false } : current));
+      }, 1100);
+    } catch (error) {
+      console.error("Could not copy coordinates", error);
+    }
+  }, []);
 
   const updateCursor = useCallback(
     (cursor) => {
@@ -579,6 +622,7 @@ export default function MapView({
     if (!map) return undefined;
 
     const handleClick = async (event) => {
+      closeContextMenu();
       pendingClickRef.current = event.latlng;
 
       if (mapBusyRef.current) {
@@ -598,6 +642,7 @@ export default function MapView({
     };
 
     const handleMouseMove = (event) => {
+      setMouseCoordinates(formatCoordinatePair(event.latlng));
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       abortControllerRef(hoverControllerRef);
 
@@ -631,9 +676,28 @@ export default function MapView({
       updateCursor(mapBusyRef.current ? "wait" : "grab");
     };
 
+    const handleContextMenu = (event) => {
+      event.originalEvent?.preventDefault?.();
+      event.originalEvent?.stopPropagation?.();
+      const coordsText = formatCoordinatePair(event.latlng);
+      const containerSize = map.getSize();
+      const menuPosition = clampMenuPosition(
+        event.containerPoint,
+        { width: 252, height: 112 },
+        containerSize
+      );
+
+      setContextMenuState({
+        ...menuPosition,
+        coordsText,
+        copied: false,
+      });
+    };
+
     const handleMoveStart = () => {
       movingRef.current = true;
       mapBusyRef.current = true;
+      closeContextMenu();
       hoverSeqRef.current += 1;
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       if (moveResumeTimerRef.current) clearTimeout(moveResumeTimerRef.current);
@@ -668,12 +732,14 @@ export default function MapView({
     map.on("click", handleClick);
     map.on("mousemove", handleMouseMove);
     map.on("mouseout", handleMouseOut);
+    map.on("contextmenu", handleContextMenu);
     map.on("movestart", handleMoveStart);
     map.on("moveend", handleMoveEnd);
     return () => {
       map.off("click", handleClick);
       map.off("mousemove", handleMouseMove);
       map.off("mouseout", handleMouseOut);
+      map.off("contextmenu", handleContextMenu);
       map.off("movestart", handleMoveStart);
       map.off("moveend", handleMoveEnd);
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -681,10 +747,28 @@ export default function MapView({
       abortControllerRef(clickControllerRef);
       abortControllerRef(hoverControllerRef);
     };
-  }, [hoverableDefs, mosaicStatus.isUpdating, queryableDefs, runPopupQuery, updateCursor]);
+  }, [closeContextMenu, hoverableDefs, mosaicStatus.isUpdating, queryableDefs, runPopupQuery, updateCursor]);
+
+  useEffect(() => {
+    if (!contextMenuState) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") closeContextMenu();
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [closeContextMenu, contextMenuState]);
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div
+      style={{ position: "relative", width: "100%", height: "100%" }}
+      onClick={() => {
+        if (contextMenuState) closeContextMenu();
+      }}
+    >
       {mosaicStatus.isUpdating && (
         <div
           style={{
@@ -773,13 +857,270 @@ export default function MapView({
         </div>
       )}
       <div ref={mapDivRef} id="map" style={{ width: "100%", height: "100%" }} />
-      <LegendDock
-        legends={legends}
-        activeLayers={visibleDefs}
-        layerOpacityMap={layerOpacityMap}
-        onLayerOpacityChange={onLayerOpacityChange}
-        onManyLayerOpacityChange={onManyLayerOpacityChange}
-      />
+      <div
+        style={{
+          position: "absolute",
+          right: 12,
+          bottom: 12,
+          display: "flex",
+          alignItems: "flex-end",
+          gap: 10,
+          zIndex: 9999,
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            pointerEvents: "auto",
+            minWidth: 220,
+            maxWidth: 280,
+            padding: "10px 12px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.88)",
+            border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 10px 24px rgba(0,0,0,.12)",
+            backdropFilter: "blur(12px)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <span
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 999,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(135deg, rgba(122,29,49,0.08), rgba(188,149,91,0.16))",
+              color: "#7a1d31",
+              flex: "0 0 30px",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 21s6-5.2 6-11a6 6 0 10-12 0c0 5.8 6 11 6 11zm0-8.2a2.8 2.8 0 110-5.6 2.8 2.8 0 010 5.6z"
+                fill="currentColor"
+              />
+            </svg>
+          </span>
+          <div
+            style={{
+              minWidth: 0,
+              display: "grid",
+              gap: 2,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: '"Montserrat", sans-serif',
+                fontVariantNumeric: "tabular-nums",
+                fontSize: 13.5,
+                lineHeight: 1.2,
+                color: "#1f1f1f",
+                letterSpacing: "0.01em",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {mouseCoordinates}
+            </div>
+            <span style={{ fontSize: 10.5, color: "#6c6c6c", letterSpacing: "0.02em" }}>Coordenadas</span>
+          </div>
+        </div>
+        <LegendDock
+          legends={legends}
+          activeLayers={visibleDefs}
+          layerOpacityMap={layerOpacityMap}
+          onLayerOpacityChange={onLayerOpacityChange}
+          onManyLayerOpacityChange={onManyLayerOpacityChange}
+          style={{ pointerEvents: "auto" }}
+        />
+      </div>
+      {contextMenuState ? (
+        <div
+          onClick={(event) => event.stopPropagation()}
+          style={{
+            position: "absolute",
+            left: contextMenuState.left,
+            top: contextMenuState.top,
+            zIndex: 20010,
+            width: 318,
+            minHeight: 112,
+            borderRadius: 22,
+            background: "rgba(255,255,255,0.97)",
+            border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 22px 46px rgba(0,0,0,0.22)",
+            backdropFilter: "blur(14px)",
+            overflow: "hidden",
+            display: "flex",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: 88,
+              flex: "0 0 88px",
+              background: "linear-gradient(180deg, #bc955b 0%, #9f2241 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                right: -26,
+                top: 0,
+                bottom: 0,
+                width: 54,
+                background: "rgba(255,255,255,0.96)",
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%, 62% 50%)",
+              }}
+            />
+            <span
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 999,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.34)",
+                background: "rgba(255,255,255,0.12)",
+                boxShadow: "0 10px 18px rgba(58,20,32,0.14)",
+                zIndex: 1,
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 21s6-5.2 6-11a6 6 0 10-12 0c0 5.8 6 11 6 11zm0-8.2a2.8 2.8 0 110-5.6 2.8 2.8 0 010 5.6z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+          </div>
+          <div
+            style={{
+              position: "relative",
+              flex: 1,
+              padding: "14px 14px 12px 18px",
+              display: "grid",
+              alignContent: "center",
+              gap: 10,
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Cerrar"
+              onClick={(event) => {
+                event.stopPropagation();
+                closeContextMenu();
+              }}
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                width: 28,
+                height: 28,
+                border: "none",
+                borderRadius: 999,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: "#7d7d7d",
+                background: "rgba(0,0,0,0.05)",
+                transition: "background 120ms ease, color 120ms ease, transform 120ms ease",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            <div style={{ display: "grid", gap: 3, paddingRight: 18 }}>
+              <strong style={{ fontSize: 13, color: "#202020" }}>Coordenadas del punto</strong>
+              <span
+                style={{
+                  fontSize: 14,
+                  color: "#3a3a3a",
+                  fontVariantNumeric: "tabular-nums",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                {contextMenuState.coordsText}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => copyCoordinates(contextMenuState.coordsText)}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                padding: "11px 12px",
+                borderRadius: 14,
+                border: "1px solid rgba(122,29,49,0.14)",
+                background: contextMenuState.copied
+                  ? "linear-gradient(135deg, rgba(36,133,93,0.12), rgba(77,187,133,0.18))"
+                  : "linear-gradient(135deg, rgba(122,29,49,0.08), rgba(188,149,91,0.18))",
+                color: contextMenuState.copied ? "#1f6b4c" : "#7a1d31",
+                cursor: "pointer",
+                transition: "transform 120ms ease, box-shadow 120ms ease, background 120ms ease",
+                boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 12.5 }}>
+                <span
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  {contextMenuState.copied ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M20 7L10 17l-5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="9" y="9" width="10" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+                      <path d="M7 15H6a2 2 0 01-2-2V6a2 2 0 012-2h7a2 2 0 012 2v1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )}
+                </span>
+                {contextMenuState.copied ? "Coordenadas copiadas" : "Copiar coordenadas"}
+              </span>
+              <span style={{ fontSize: 11.5, opacity: 0.78 }}>
+                {contextMenuState.copied ? "Listo" : "Click"}
+              </span>
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
