@@ -1,4 +1,13 @@
 const trimTrailingSlash = (value) => String(value || "").replace(/\/+$/, "");
+const numberOr = (value, fallback) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+};
+const booleanOr = (value, fallback) => {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+};
 
 export const HIDALGO_REGION_BOUNDS = [
   [18.0, -101.6],
@@ -15,7 +24,16 @@ export const GEOSERVER_CONFIG = {
   wmsVersion: "1.1.1",
   defaultCrs: "EPSG:3857",
   defaultFeatureCount: 5,
+  maxFeatureInfoCount: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_MAX_FEATURE_INFO_COUNT, 24),
   queryBuffer: 10,
+  overlayFormat: process.env.NEXT_PUBLIC_GEOSERVER_WMS_FORMAT || "image/png8",
+  wmsTileSize: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_TILE_SIZE, 512),
+  wmsKeepBuffer: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_KEEP_BUFFER, 10),
+  wmsUpdateInterval: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_INTERVAL, 120),
+  wmsUpdateWhenIdle: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_IDLE, false),
+  wmsUpdateWhenZooming: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_ZOOMING, false),
+  hoverDebounceMs: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_HOVER_DEBOUNCE_MS, 180),
+  interactionResumeDelayMs: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_INTERACTION_RESUME_DELAY_MS, 180),
 };
 
 export function resolveServiceUrl(url) {

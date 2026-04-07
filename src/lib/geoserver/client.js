@@ -74,12 +74,17 @@ function buildServiceUrl(url, params) {
 export function createWmsLayer(layerDef, paneId, zIndex) {
   return L.tileLayer.wms(resolveServiceUrl(GEOSERVER_CONFIG.wmsUrl), {
     layers: buildQualifiedLayerName(layerDef),
-    format: "image/png",
+    format: layerDef.wmsFormat || GEOSERVER_CONFIG.overlayFormat,
     transparent: true,
     tiled: true,
-    tileSize: 256,
-    keepBuffer: 4,
-    updateWhenIdle: true,
+    tileSize: GEOSERVER_CONFIG.wmsTileSize,
+    keepBuffer: GEOSERVER_CONFIG.wmsKeepBuffer,
+    updateWhenIdle: GEOSERVER_CONFIG.wmsUpdateWhenIdle,
+    updateWhenZooming: GEOSERVER_CONFIG.wmsUpdateWhenZooming,
+    updateInterval: GEOSERVER_CONFIG.wmsUpdateInterval,
+    detectRetina: false,
+    crossOrigin: true,
+    className: "geoserver-wms-layer",
     pane: paneId,
     zIndex,
     styles: layerDef.wmsStyleName || "",
@@ -87,29 +92,70 @@ export function createWmsLayer(layerDef, paneId, zIndex) {
   });
 }
 
-export async function fetchFeatureInfo(map, latlng, layerDef) {
+function normalizeFeatureInfoPayload(payload) {
+  return {
+    ...payload,
+    features: Array.isArray(payload?.features) ? payload.features.map(normalizeFeature) : [],
+  };
+}
+
+function buildFeatureInfoUrl(map, latlng, layerDefs) {
   const point = map.latLngToContainerPoint(latlng, map.getZoom());
   const size = map.getSize();
-  const url = buildServiceUrl(GEOSERVER_CONFIG.wmsUrl, {
+  const definitions = Array.isArray(layerDefs) ? layerDefs.filter(Boolean) : [layerDefs].filter(Boolean);
+  const qualifiedLayers = definitions.map(buildQualifiedLayerName);
+  const styles = definitions.map((layerDef) => layerDef.wmsStyleName || "").join(",");
+
+  return buildServiceUrl(GEOSERVER_CONFIG.wmsUrl, {
     service: "WMS",
     request: "GetFeatureInfo",
     version: GEOSERVER_CONFIG.wmsVersion,
-    layers: buildQualifiedLayerName(layerDef),
-    query_layers: buildQualifiedLayerName(layerDef),
-    styles: layerDef.wmsStyleName || "",
+    layers: qualifiedLayers.join(","),
+    query_layers: qualifiedLayers.join(","),
+    styles,
     bbox: projectBounds(map),
     width: size.x,
     height: size.y,
     srs: GEOSERVER_CONFIG.defaultCrs,
     format: "image/png",
     info_format: GEOSERVER_CONFIG.infoFormat,
-    feature_count: GEOSERVER_CONFIG.defaultFeatureCount,
+    feature_count: Math.min(
+      Math.max(definitions.length, GEOSERVER_CONFIG.defaultFeatureCount),
+      GEOSERVER_CONFIG.maxFeatureInfoCount
+    ),
     buffer: GEOSERVER_CONFIG.queryBuffer,
     x: Math.round(point.x),
     y: Math.round(point.y),
   });
+}
 
-  const response = await fetch(url);
+function inferLayerDefFromFeature(feature, layerDefs) {
+  if (!feature || !Array.isArray(layerDefs) || layerDefs.length === 0) return layerDefs?.[0] || null;
+
+  const lookup = new Map();
+  layerDefs.forEach((layerDef) => {
+    const qualifiedName = buildQualifiedLayerName(layerDef).toLowerCase();
+    lookup.set(qualifiedName, layerDef);
+    lookup.set(layerDef.layerName.toLowerCase(), layerDef);
+  });
+
+  const featureId = String(feature?.id || "");
+  const featureSource = String(feature?.properties?.layer || feature?.properties?.typename || "");
+
+  const rawToken = featureId.includes(".") ? featureId.split(".")[0] : featureSource;
+  const normalizedToken = rawToken.toLowerCase();
+
+  return (
+    lookup.get(normalizedToken) ||
+    lookup.get(normalizedToken.replace(/^.*:/, "")) ||
+    layerDefs[0] ||
+    null
+  );
+}
+
+export async function fetchFeatureInfo(map, latlng, layerDef, options = {}) {
+  const url = buildFeatureInfoUrl(map, latlng, layerDef);
+  const response = await fetch(url, { signal: options.signal });
   if (!response.ok) throw new Error(`GetFeatureInfo failed for ${layerDef.id}`);
 
   const contentType = response.headers.get("content-type") || "";
@@ -118,9 +164,31 @@ export async function fetchFeatureInfo(map, latlng, layerDef) {
   }
 
   const payload = await response.json();
+  return normalizeFeatureInfoPayload(payload);
+}
+
+export async function fetchCombinedFeatureInfo(map, latlng, layerDefs, options = {}) {
+  const definitions = Array.isArray(layerDefs) ? layerDefs.filter(Boolean) : [];
+  if (definitions.length === 0) return null;
+
+  const url = buildFeatureInfoUrl(map, latlng, definitions);
+  const response = await fetch(url, { signal: options.signal });
+  if (!response.ok) throw new Error("Combined GetFeatureInfo failed");
+
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return null;
+  }
+
+  const payload = await response.json();
+  const normalized = normalizeFeatureInfoPayload(payload);
+  const feature = normalized.features?.[0];
+  if (!feature?.properties) return null;
+
   return {
-    ...payload,
-    features: Array.isArray(payload?.features) ? payload.features : [],
+    feature,
+    layerDef: inferLayerDefFromFeature(feature, definitions),
+    collection: normalized,
   };
 }
 

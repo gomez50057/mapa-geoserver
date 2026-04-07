@@ -1,4 +1,4 @@
-import { fetchFeatureAtLatLng, fetchFeatureInfo } from "./client";
+import { fetchCombinedFeatureInfo } from "./client";
 
 export function getFallbackRadiusForZoom(zoom) {
   if (zoom >= 17) return 0.00012;
@@ -12,41 +12,18 @@ export async function resolveTopmostFeatureAtLatLng({
   map,
   latlng,
   layers,
-  allowWfsFallback = true,
+  signal,
   logErrors = true,
 }) {
-  for (const layerDef of layers) {
-    if (layerDef.queryMode === "getFeatureInfo" || layerDef.sourceType === "wms") {
-      try {
-        const collection = await fetchFeatureInfo(map, latlng, layerDef);
-        const feature = collection?.features?.[0];
-        if (feature?.properties) {
-          return { feature, layerDef };
-        }
-      } catch (error) {
-        if (logErrors) {
-          console.error(`Query error for layer ${layerDef.id}`, error);
-        }
-      }
-    }
+  if (!Array.isArray(layers) || layers.length === 0) return null;
 
-    if (!allowWfsFallback || layerDef.clickFallbackMode !== "wfs") continue;
-
-    try {
-      const fallbackFeature = await fetchFeatureAtLatLng(
-        layerDef,
-        latlng,
-        getFallbackRadiusForZoom(map.getZoom())
-      );
-      if (fallbackFeature?.properties) {
-        return { feature: fallbackFeature, layerDef };
-      }
-    } catch (error) {
-      if (logErrors) {
-        console.error(`Fallback query error for layer ${layerDef.id}`, error);
-      }
+  try {
+    return await fetchCombinedFeatureInfo(map, latlng, layers, { signal });
+  } catch (error) {
+    if (error?.name === "AbortError") return null;
+    if (logErrors) {
+      console.error("Combined query error", error);
     }
+    return null;
   }
-
-  return null;
 }

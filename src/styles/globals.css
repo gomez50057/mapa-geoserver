@@ -49,6 +49,20 @@ body {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 
+.geoserver-wms-layer {
+  will-change: transform, opacity;
+}
+
+.geoserver-wms-layer .leaflet-tile {
+  transition: opacity 0.22s ease-in-out;
+  image-rendering: auto;
+  backface-visibility: hidden;
+}
+
+.leaflet-tile-container {
+  will-change: transform;
+}
+
 
 .PopupT {
   text-align: center;
