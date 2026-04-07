@@ -144,6 +144,19 @@ body {
   display: none;
 }
 
+.location-popup .leaflet-popup-content-wrapper {
+  overflow: visible;
+}
+
+.location-popup .leaflet-popup-content {
+  width: 164px !important;
+  min-width: 164px;
+  max-width: 164px;
+  max-height: none;
+  overflow: visible;
+  margin: 12px 14px;
+}
+
 @media (max-width: 600px) {
   .leaflet-popup-content-wrapper {
     width: 90vw;

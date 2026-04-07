@@ -152,6 +152,7 @@ export default function MapView({
   const moveResumeTimerRef = useRef(null);
   const clickControllerRef = useRef(null);
   const hoverControllerRef = useRef(null);
+  const locationOverlayRef = useRef(null);
   const movingRef = useRef(false);
   const mapBusyRef = useRef(false);
   const pendingClickRef = useRef(null);
@@ -459,6 +460,202 @@ export default function MapView({
       )
       .addTo(map);
 
+    const LocateControl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const wrapper = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+        wrapper.style.marginTop = "10px";
+        wrapper.style.border = "none";
+        wrapper.style.background = "transparent";
+
+        const button = L.DomUtil.create("button", "", wrapper);
+        button.type = "button";
+        button.title = "Ir a mi ubicación";
+        button.setAttribute("aria-label", "Ir a mi ubicación");
+        button.style.width = "34px";
+        button.style.height = "34px";
+        button.style.display = "inline-flex";
+        button.style.alignItems = "center";
+        button.style.justifyContent = "center";
+        button.style.border = "1px solid rgba(0,0,0,0.12)";
+        button.style.borderRadius = "10px";
+        button.style.background = "rgba(255,255,255,0.95)";
+        button.style.backdropFilter = "blur(10px)";
+        button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+        button.style.cursor = "pointer";
+        button.style.transition = "transform 120ms ease, box-shadow 120ms ease, background 120ms ease";
+        button.style.color = "#7a1d31";
+        button.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v3m0 12v3M3 12h3m12 0h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="5.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <circle cx="12" cy="12" r="1.7" fill="currentColor"/>
+          </svg>
+        `;
+
+        const setLoading = (loading) => {
+          button.disabled = loading;
+          button.style.cursor = loading ? "wait" : "pointer";
+          button.style.opacity = loading ? "0.78" : "1";
+          button.style.transform = loading ? "scale(0.98)" : "scale(1)";
+        };
+
+        const showMessage = (latlng, message) => {
+          L.popup({ autoClose: true, closeButton: false, offset: [0, -16] })
+            .setLatLng(latlng || map.getCenter())
+            .setContent(
+              `<div style="font-family:Montserrat,sans-serif;font-size:12px;color:#222;padding:2px 4px;">${message}</div>`
+            )
+            .openOn(map);
+        };
+
+        const handleLocate = () => {
+          if (!navigator?.geolocation) {
+            showMessage(map.getCenter(), "La ubicación no está disponible en este navegador.");
+            return;
+          }
+
+          setLoading(true);
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+              if (locationOverlayRef.current) {
+                locationOverlayRef.current.remove();
+              }
+
+              const marker = L.circleMarker(latlng, {
+                radius: 7,
+                color: "#ffffff",
+                weight: 2.2,
+                fillColor: "#1d6fa5",
+                fillOpacity: 1,
+              }).bindPopup(
+                `
+                  <div style="position:relative;font-family:Montserrat,sans-serif;display:grid;gap:6px;width:164px;padding-right:18px;line-height:1.2;">
+                    <button
+                      type="button"
+                      data-close-location="true"
+                      aria-label="Cerrar"
+                      style="
+                        position:absolute;
+                        top:-4px;
+                        right:-4px;
+                        width:22px;
+                        height:22px;
+                        border:none;
+                        border-radius:999px;
+                        background:rgba(0,0,0,0.05);
+                        color:#7d7d7d;
+                        display:inline-flex;
+                        align-items:center;
+                        justify-content:center;
+                        cursor:pointer;
+                      "
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                    </button>
+                    <strong style="font-size:12.5px;color:#202020;">Ubicación actual</strong>
+                    <button
+                      type="button"
+                      data-remove-location="true"
+                      style="
+                        padding:8px 10px;
+                        border:none;
+                        border-radius:10px;
+                        background:linear-gradient(135deg, rgba(122,29,49,0.08), rgba(188,149,91,0.18));
+                        color:#7a1d31;
+                        font-weight:700;
+                        font-size:12px;
+                        cursor:pointer;
+                        box-shadow:0 8px 18px rgba(0,0,0,0.08);
+                      "
+                    >
+                      Quitar ubicación
+                    </button>
+                  </div>
+                `,
+                {
+                  offset: [0, -10],
+                  closeButton: false,
+                  className: "location-popup",
+                  autoPanPadding: [24, 24],
+                  minWidth: 192,
+                  maxWidth: 192,
+                }
+              );
+
+              marker.on("popupopen", () => {
+                const closeButton = document.querySelector('[data-close-location="true"]');
+                const button = document.querySelector('[data-remove-location="true"]');
+                if (closeButton && closeButton.dataset.bound !== "true") {
+                  closeButton.dataset.bound = "true";
+                  closeButton.addEventListener("click", () => {
+                    map.closePopup();
+                  });
+                }
+                if (!button || button.dataset.bound === "true") return;
+                button.dataset.bound = "true";
+                button.addEventListener("click", () => {
+                  locationOverlayRef.current?.remove?.();
+                  locationOverlayRef.current = null;
+                  map.closePopup();
+                });
+              });
+
+              const group = L.layerGroup([marker]).addTo(map);
+              locationOverlayRef.current = group;
+
+              const targetZoom = Math.max(map.getZoom(), 16);
+              map.flyTo(latlng, targetZoom, {
+                duration: 0.85,
+                easeLinearity: 0.22,
+              });
+
+              window.setTimeout(() => {
+                marker.openPopup();
+              }, 240);
+
+              setLoading(false);
+            },
+            () => {
+              showMessage(map.getCenter(), "No se pudo obtener tu ubicación.");
+              setLoading(false);
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 12000,
+              maximumAge: 30000,
+            }
+          );
+        };
+
+        L.DomEvent.disableClickPropagation(wrapper);
+        L.DomEvent.disableScrollPropagation(wrapper);
+        L.DomEvent.on(button, "click", (event) => {
+          L.DomEvent.preventDefault(event);
+          L.DomEvent.stopPropagation(event);
+          handleLocate();
+        });
+        L.DomEvent.on(button, "mouseenter", () => {
+          button.style.boxShadow = "0 14px 28px rgba(0,0,0,0.18)";
+          button.style.transform = "translateY(-1px)";
+        });
+        L.DomEvent.on(button, "mouseleave", () => {
+          if (!button.disabled) {
+            button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+            button.style.transform = "translateY(0)";
+          }
+        });
+
+        return wrapper;
+      },
+    });
+
+    new LocateControl().addTo(map);
+
     mapRef.current = map;
 
     return () => {
@@ -476,6 +673,10 @@ export default function MapView({
       if (moveResumeTimerRef.current) clearTimeout(moveResumeTimerRef.current);
       abortControllerRef(clickControllerRef);
       abortControllerRef(hoverControllerRef);
+      if (locationOverlayRef.current) {
+        locationOverlayRef.current.remove();
+        locationOverlayRef.current = null;
+      }
     };
   }, []);
 
