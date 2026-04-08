@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import LegendDock from "./LegendDock";
+import DrawingToolsPanel from "./DrawingToolsPanel";
 import { GEOSERVER_CONFIG, HIDALGO_REGION_BOUNDS } from "@/config/geoserver";
 import { createWmsLayer } from "@/lib/geoserver/client";
 import { resolveTopmostFeatureAtLatLng } from "@/lib/geoserver/interaction";
@@ -18,8 +19,18 @@ const FALLBACK_BOUNDS = L.latLngBounds(HIDALGO_REGION_BOUNDS[0], HIDALGO_REGION_
 const clampZ = (z) => Math.max(-9999, Math.min(9999, Math.round(Number(z ?? 400))));
 const COORDINATE_DECIMALS = 7;
 const IMPORT_LAYER_PANE = "pane_uploaded_vector";
+const DRAW_LAYER_PANE = "pane_drawn_shapes";
+const DRAW_PREVIEW_PANE = "pane_drawn_preview";
 const MAX_IMPORT_FILE_SIZE_BYTES = 12 * 1024 * 1024;
 const SAFE_IMPORT_EXTENSIONS = new Set([".geojson", ".kml"]);
+const EARTH_RADIUS_METERS = 6378137;
+const DRAW_TOOL_DEFAULT_HELPERS = {
+  point: "Haz clic en el mapa para colocar un punto de referencia.",
+  line: "Haz clic para agregar vértices. Usa Finalizar o doble clic para terminar la línea.",
+  polygon: "Haz clic para agregar vértices. Usa Finalizar o doble clic para cerrar el polígono.",
+  rectangle: "Haz clic para la primera esquina y una segunda vez para la esquina opuesta.",
+  circle: "Haz clic para definir el centro y una segunda vez para fijar el radio.",
+};
 const SAFE_IMPORT_MIME_TYPES = {
   ".geojson": new Set(["", "application/geo+json", "application/json"]),
   ".kml": new Set(["", "application/vnd.google-earth.kml+xml", "application/xml", "text/xml"]),
@@ -63,6 +74,325 @@ const EXPORT_PAGE_PRESETS = {
 function formatCoordinatePair(latlng) {
   if (!latlng) return "20.0830998, -98.7948132";
   return `${Number(latlng.lat).toFixed(COORDINATE_DECIMALS)}, ${Number(latlng.lng).toFixed(COORDINATE_DECIMALS)}`;
+}
+
+function toRadians(value) {
+  return (Number(value) * Math.PI) / 180;
+}
+
+function toDegrees(value) {
+  return (Number(value) * 180) / Math.PI;
+}
+
+function formatDistance(distanceMeters) {
+  const distance = Number(distanceMeters || 0);
+  if (distance >= 1000) return `${(distance / 1000).toFixed(distance >= 10000 ? 1 : 2)} km`;
+  return `${distance.toFixed(distance >= 100 ? 0 : 1)} m`;
+}
+
+function formatArea(areaSqMeters) {
+  const area = Math.max(0, Number(areaSqMeters || 0));
+  if (area >= 1000000) return `${(area / 1000000).toFixed(2)} km²`;
+  if (area >= 10000) return `${(area / 10000).toFixed(2)} ha`;
+  return `${area.toFixed(area >= 100 ? 0 : 1)} m²`;
+}
+
+function computeLineDistance(latlngs = []) {
+  let total = 0;
+  for (let index = 1; index < latlngs.length; index += 1) {
+    total += latlngs[index - 1].distanceTo(latlngs[index]);
+  }
+  return total;
+}
+
+function computeGeodesicArea(latlngs = []) {
+  if (!Array.isArray(latlngs) || latlngs.length < 3) return 0;
+
+  let area = 0;
+  for (let index = 0; index < latlngs.length; index += 1) {
+    const current = latlngs[index];
+    const next = latlngs[(index + 1) % latlngs.length];
+    area += toRadians(next.lng - current.lng) * (2 + Math.sin(toRadians(current.lat)) + Math.sin(toRadians(next.lat)));
+  }
+
+  return Math.abs((area * EARTH_RADIUS_METERS * EARTH_RADIUS_METERS) / 2);
+}
+
+function getRectangleLatLngs(bounds) {
+  if (!bounds) return [];
+  const northWest = bounds.getNorthWest();
+  const northEast = bounds.getNorthEast();
+  const southEast = bounds.getSouthEast();
+  const southWest = bounds.getSouthWest();
+  return [northWest, northEast, southEast, southWest];
+}
+
+function buildDrawingMeasurement({ type, latlngs = [], center = null, radius = 0, point = null, bounds = null }) {
+  if (type === "point" && point) {
+    return {
+      headline: "Punto",
+      detail: formatCoordinatePair(point),
+      metrics: [{ label: "Coordenadas", value: formatCoordinatePair(point) }],
+    };
+  }
+
+  if (type === "line") {
+    const length = computeLineDistance(latlngs);
+    const segmentMetrics = latlngs.slice(1).map((point, index) => ({
+      label: `Tramo ${index + 1}`,
+      value: formatDistance(latlngs[index].distanceTo(point)),
+    }));
+    return {
+      headline: "Longitud",
+      detail: formatDistance(length),
+      metrics: [...segmentMetrics, { label: "Longitud total", value: formatDistance(length) }],
+    };
+  }
+
+  if (type === "circle" && center && radius > 0) {
+    const area = Math.PI * radius * radius;
+    return {
+      headline: "Área",
+      detail: formatArea(area),
+      metrics: [
+        { label: "Centro", value: formatCoordinatePair(center) },
+        { label: "Radio", value: formatDistance(radius) },
+        { label: "Diámetro", value: formatDistance(radius * 2) },
+        { label: "Área", value: formatArea(area) },
+      ],
+    };
+  }
+
+  const polygonLatLngs = type === "rectangle" && bounds ? getRectangleLatLngs(bounds) : latlngs;
+  const area = computeGeodesicArea(polygonLatLngs);
+  const closed = [...polygonLatLngs, polygonLatLngs[0]].filter(Boolean);
+  const segmentMetrics = closed.slice(1).map((point, index) => ({
+    label: `Lado ${index + 1}`,
+    value: formatDistance(closed[index].distanceTo(point)),
+  }));
+
+  return {
+    headline: "Área",
+    detail: formatArea(area),
+    metrics: [...segmentMetrics, { label: "Área", value: formatArea(area) }],
+  };
+}
+
+function buildDrawingPopupHtml(feature) {
+  const rows = (feature?.measurement?.metrics || [])
+    .map(
+      (metric) => `
+        <div style="display:grid;gap:2px;padding:6px 0;border-top:1px solid rgba(0,0,0,0.06);">
+          <strong style="font-size:11px;color:#7a1d31;text-transform:uppercase;letter-spacing:.04em;">${escapeHtml(metric.label)}</strong>
+          <span style="font-size:12px;color:#2e2e2e;word-break:break-word;">${escapeHtml(metric.value)}</span>
+        </div>
+      `
+    )
+    .join("");
+
+  return `
+    <div style="font-family:Montserrat,sans-serif;min-width:188px;">
+      <div style="display:grid;gap:2px;padding-bottom:4px;">
+        <strong style="font-size:12.5px;color:#202020;">${escapeHtml(feature?.label || "Trazo")}</strong>
+        <span style="font-size:11.5px;color:#666;">${escapeHtml(feature?.typeLabel || "")}</span>
+      </div>
+      ${rows || `<span style="font-size:12px;color:#444;">Sin mediciones disponibles.</span>`}
+    </div>
+  `;
+}
+
+function getLatLngAverage(latlngs = []) {
+  if (!latlngs.length) return null;
+  const sums = latlngs.reduce(
+    (accumulator, point) => ({
+      lat: accumulator.lat + Number(point.lat || 0),
+      lng: accumulator.lng + Number(point.lng || 0),
+    }),
+    { lat: 0, lng: 0 }
+  );
+  return L.latLng(sums.lat / latlngs.length, sums.lng / latlngs.length);
+}
+
+function getFeatureCenter(feature) {
+  if (feature.type === "point") return feature.point || null;
+  if (feature.type === "circle") return feature.center || null;
+  if (feature.latlngs?.length) {
+    const bounds = L.latLngBounds(feature.latlngs);
+    if (bounds?.isValid?.()) return bounds.getCenter();
+    return getLatLngAverage(feature.latlngs);
+  }
+  return null;
+}
+
+function getMidpoint(first, second) {
+  return L.latLng((first.lat + second.lat) / 2, (first.lng + second.lng) / 2);
+}
+
+function getFeatureSummary(feature) {
+  const metrics = feature?.measurement?.metrics || [];
+  return metrics
+    .slice(0, 2)
+    .map((metric) => `${metric.label}: ${metric.value}`)
+    .join(" · ");
+}
+
+function buildFeatureMeasurementLayers(feature) {
+  const layers = [];
+  const createLabel = (latlng, text, tone = "dark") => {
+    if (!latlng || !text) return;
+    const marker = L.marker(latlng, {
+      pane: DRAW_LAYER_PANE,
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({
+        className: "drawing-inline-measure",
+        iconSize: null,
+        html: `
+          <span
+            style="
+              display:inline-flex;
+              align-items:center;
+              justify-content:center;
+              padding:2px 7px;
+              border-radius:999px;
+              background:${tone === "accent" ? "rgba(105,27,50,0.82)" : "rgba(25,25,25,0.72)"};
+              color:#fff;
+              font-family:Montserrat,sans-serif;
+              font-size:11px;
+              font-weight:700;
+              line-height:1;
+              letter-spacing:.01em;
+              border:1px solid rgba(255,255,255,0.24);
+              box-shadow:0 6px 14px rgba(0,0,0,0.14);
+              white-space:nowrap;
+              backdrop-filter:blur(6px);
+            "
+          >${escapeHtml(text)}</span>
+        `,
+      }),
+    });
+    layers.push(marker);
+  };
+
+  if (feature.type === "point" && feature.point) {
+    createLabel(feature.point, formatCoordinatePair(feature.point));
+    return layers;
+  }
+
+  if (feature.type === "line" && feature.latlngs?.length >= 2) {
+    feature.latlngs.forEach((point, index) => {
+      if (index === 0) return;
+      const previous = feature.latlngs[index - 1];
+      createLabel(getMidpoint(previous, point), formatDistance(previous.distanceTo(point)));
+    });
+    createLabel(getFeatureCenter(feature), feature.measurement?.detail || "", "accent");
+    return layers;
+  }
+
+  if ((feature.type === "polygon" || feature.type === "rectangle") && feature.latlngs?.length >= 3) {
+    const closed = [...feature.latlngs, feature.latlngs[0]];
+    closed.forEach((point, index) => {
+      if (index === 0) return;
+      const previous = closed[index - 1];
+      createLabel(getMidpoint(previous, point), formatDistance(previous.distanceTo(point)));
+    });
+    createLabel(getFeatureCenter(feature), feature.measurement?.detail || "", "accent");
+    return layers;
+  }
+
+  if (feature.type === "circle" && feature.center && feature.radius > 0) {
+    const edge = destinationPoint(feature.center, feature.radius, 90);
+    createLabel(getMidpoint(feature.center, edge), formatDistance(feature.radius));
+    createLabel(feature.center, feature.measurement?.metrics?.find((metric) => metric.label === "Área")?.value || "", "accent");
+  }
+
+  return layers;
+}
+
+function latLngToKmlCoordinate(latlng) {
+  return `${Number(latlng.lng).toFixed(7)},${Number(latlng.lat).toFixed(7)},0`;
+}
+
+function destinationPoint(center, distanceMeters, bearingDegrees) {
+  const angularDistance = distanceMeters / EARTH_RADIUS_METERS;
+  const bearing = toRadians(bearingDegrees);
+  const lat1 = toRadians(center.lat);
+  const lng1 = toRadians(center.lng);
+
+  const lat2 =
+    Math.asin(
+      Math.sin(lat1) * Math.cos(angularDistance) +
+        Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(bearing)
+    );
+  const lng2 =
+    lng1 +
+    Math.atan2(
+      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(lat1),
+      Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+    );
+
+  return L.latLng(toDegrees(lat2), toDegrees(lng2));
+}
+
+function circleToLatLngs(center, radiusMeters, steps = 72) {
+  return Array.from({ length: steps }, (_, index) => destinationPoint(center, radiusMeters, (index / steps) * 360));
+}
+
+function featureToKmlPlacemark(feature) {
+  const propertiesXml = (feature?.measurement?.metrics || [])
+    .map(
+      (metric) => `
+        <Data name="${escapeHtml(metric.label)}">
+          <value>${escapeHtml(metric.value)}</value>
+        </Data>
+      `
+    )
+    .join("");
+
+  let geometryXml = "";
+  if (feature.type === "point") {
+    geometryXml = `<Point><coordinates>${latLngToKmlCoordinate(feature.point)}</coordinates></Point>`;
+  } else if (feature.type === "line") {
+    geometryXml = `
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>${feature.latlngs.map(latLngToKmlCoordinate).join(" ")}</coordinates>
+      </LineString>
+    `;
+  } else if (feature.type === "circle") {
+    const circleLatLngs = circleToLatLngs(feature.center, feature.radius);
+    const circleRing = [...circleLatLngs, circleLatLngs[0]];
+    geometryXml = `
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>${circleRing.map(latLngToKmlCoordinate).join(" ")}</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    `;
+  } else {
+    const latlngs = feature.latlngs;
+    const ring = [...latlngs, latlngs[0]];
+    geometryXml = `
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>${ring.map(latLngToKmlCoordinate).join(" ")}</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    `;
+  }
+
+  return `
+    <Placemark>
+      <name>${escapeHtml(feature.label)}</name>
+      <description>${escapeHtml(feature.measurement?.detail || "")}</description>
+      <ExtendedData>${propertiesXml}</ExtendedData>
+      ${geometryXml}
+    </Placemark>
+  `;
 }
 
 function clampMenuPosition(point, menuSize, containerSize) {
@@ -842,6 +1172,17 @@ export default function MapView({
   const hoverControllerRef = useRef(null);
   const locationOverlayRef = useRef(null);
   const importedOverlayRef = useRef(null);
+  const drawingLayerGroupRef = useRef(null);
+  const drawingPreviewGroupRef = useRef(null);
+  const drawingEditHandlesRef = useRef(null);
+  const drawingStateRef = useRef({
+    tool: null,
+    points: [],
+    anchor: null,
+  });
+  const drawnFeaturesRef = useRef([]);
+  const editingSnapshotRef = useRef(null);
+  const drawClickTimerRef = useRef(null);
   const importInputRef = useRef(null);
   const movingRef = useRef(false);
   const mapBusyRef = useRef(false);
@@ -871,6 +1212,18 @@ export default function MapView({
     paperSize: "letter",
     error: "",
   });
+  const [drawingPanelOpen, setDrawingPanelOpen] = useState(false);
+  const [activeDrawingTool, setActiveDrawingTool] = useState(null);
+  const [drawnFeaturesState, setDrawnFeaturesState] = useState([]);
+  const [editingFeatureId, setEditingFeatureId] = useState(null);
+  const [drawingDraftState, setDrawingDraftState] = useState({
+    tool: null,
+    pointsCount: 0,
+    canFinish: false,
+    helperText: "",
+    measurementText: "",
+  });
+  const [drawnFeatureCount, setDrawnFeatureCount] = useState(0);
 
   const visibleDefs = useMemo(
     () => [...selectedLayers].sort((a, b) => getLayerZ(a, zMap) - getLayerZ(b, zMap)),
@@ -1024,6 +1377,477 @@ export default function MapView({
     controllerRef.current = null;
   };
 
+  const syncDrawingDraft = useCallback((overrides = {}) => {
+    const session = {
+      ...drawingStateRef.current,
+      ...overrides,
+      points: overrides.points ?? drawingStateRef.current.points ?? [],
+    };
+
+    const helperText = session.tool
+      ? DRAW_TOOL_DEFAULT_HELPERS[session.tool] || "Sigue trazando sobre el mapa."
+      : "Elige una herramienta y comienza a dibujar sobre el mapa.";
+
+    let measurementText = "";
+    let canFinish = false;
+    if (session.tool === "line") {
+      canFinish = session.points.length >= 2;
+      if (session.points.length >= 2) {
+        measurementText = `Longitud actual: ${formatDistance(computeLineDistance(session.points))}`;
+      }
+    } else if (session.tool === "polygon") {
+      canFinish = session.points.length >= 3;
+      if (session.points.length >= 3) {
+        measurementText = `Área estimada: ${formatArea(computeGeodesicArea(session.points))}`;
+      }
+    } else if (session.tool === "rectangle" && session.anchor && session.points[0]) {
+      const previewBounds = L.latLngBounds(session.anchor, session.points[0]);
+      measurementText = `Área estimada: ${formatArea(computeGeodesicArea(getRectangleLatLngs(previewBounds)))}`;
+    } else if (session.tool === "circle" && session.anchor && session.points[0]) {
+      measurementText = `Radio actual: ${formatDistance(session.anchor.distanceTo(session.points[0]))}`;
+    } else if (session.tool === "point" && session.points[0]) {
+      measurementText = `Punto: ${formatCoordinatePair(session.points[0])}`;
+    }
+
+    setDrawingDraftState({
+      tool: session.tool,
+      pointsCount: session.points.length,
+      canFinish,
+      helperText,
+      measurementText,
+    });
+  }, []);
+
+  const clearDrawingPreview = useCallback(() => {
+    drawingPreviewGroupRef.current?.clearLayers?.();
+  }, []);
+
+  const renderDrawnFeatures = useCallback(() => {
+    const group = drawingLayerGroupRef.current;
+    if (!group) return;
+
+    group.clearLayers();
+
+    drawnFeaturesRef.current.forEach((feature) => {
+      let layer = null;
+      if (feature.type === "point" && feature.point) {
+        layer = L.circleMarker(feature.point, {
+          pane: DRAW_LAYER_PANE,
+          radius: 7,
+          color: "#ffffff",
+          weight: 2,
+          fillColor: feature.id === editingFeatureId ? "#bc955b" : "#7a1d31",
+          fillOpacity: 1,
+        });
+      } else if (feature.type === "line" && feature.latlngs?.length >= 2) {
+        layer = L.polyline(feature.latlngs, {
+          pane: DRAW_LAYER_PANE,
+          color: feature.id === editingFeatureId ? "#bc955b" : "#7a1d31",
+          weight: feature.id === editingFeatureId ? 3.6 : 3,
+          opacity: 0.95,
+        });
+      } else if (feature.type === "circle" && feature.center && feature.radius > 0) {
+        layer = L.circle(feature.center, {
+          pane: DRAW_LAYER_PANE,
+          radius: feature.radius,
+          color: feature.id === editingFeatureId ? "#bc955b" : "#7a1d31",
+          weight: feature.id === editingFeatureId ? 3.2 : 2.6,
+          opacity: 0.95,
+          fillColor: "#bc955b",
+          fillOpacity: 0.18,
+        });
+      } else if ((feature.type === "polygon" || feature.type === "rectangle") && feature.latlngs?.length >= 3) {
+        layer = L.polygon(feature.latlngs, {
+          pane: DRAW_LAYER_PANE,
+          color: feature.id === editingFeatureId ? "#bc955b" : "#7a1d31",
+          weight: feature.id === editingFeatureId ? 3.2 : 2.6,
+          opacity: 0.95,
+          fillColor: "#bc955b",
+          fillOpacity: 0.18,
+        });
+      }
+
+      if (!layer) return;
+      layer.addTo(group);
+      layer.bindPopup(buildDrawingPopupHtml(feature));
+      layer.on("click", () => setEditingFeatureId((current) => current ?? feature.id));
+
+      buildFeatureMeasurementLayers(feature).forEach((measurementLayer) => measurementLayer.addTo(group));
+    });
+
+    setDrawnFeaturesState(
+      drawnFeaturesRef.current.map((feature) => ({
+        id: feature.id,
+        label: feature.label,
+        typeLabel: feature.typeLabel,
+        summary: getFeatureSummary(feature),
+      }))
+    );
+    setDrawnFeatureCount(drawnFeaturesRef.current.length);
+  }, [editingFeatureId]);
+
+  const clearDrawingSession = useCallback(() => {
+    drawingStateRef.current = {
+      tool: activeDrawingTool,
+      points: [],
+      anchor: null,
+    };
+    clearDrawingPreview();
+    syncDrawingDraft();
+  }, [activeDrawingTool, clearDrawingPreview, syncDrawingDraft]);
+
+  const updateDrawingPreview = useCallback(
+    (cursorLatLng = null) => {
+      const map = mapRef.current;
+      const previewGroup = drawingPreviewGroupRef.current;
+      const session = drawingStateRef.current;
+      if (!map || !previewGroup) return;
+
+      previewGroup.clearLayers();
+
+      if (!session.tool) return;
+
+      const previewOptions = {
+        pane: DRAW_PREVIEW_PANE,
+        color: "#7a1d31",
+        weight: 2.4,
+        opacity: 0.92,
+        fillColor: "#bc955b",
+        fillOpacity: 0.14,
+        dashArray: "8 6",
+      };
+
+      const markerOptions = {
+        pane: DRAW_PREVIEW_PANE,
+        radius: 4.5,
+        color: "#fff",
+        weight: 1.6,
+        fillColor: "#7a1d31",
+        fillOpacity: 1,
+      };
+
+      const previewPoints = session.points.slice();
+      if (cursorLatLng && (session.tool === "line" || session.tool === "polygon")) {
+        previewPoints.push(cursorLatLng);
+      }
+
+      if (session.tool === "point" && cursorLatLng) {
+        L.circleMarker(cursorLatLng, markerOptions).addTo(previewGroup);
+      }
+
+      session.points.forEach((point) => {
+        L.circleMarker(point, markerOptions).addTo(previewGroup);
+      });
+
+      let infoLatLng = cursorLatLng || session.points.at(-1) || session.anchor || null;
+      let infoText = "";
+
+      if (session.tool === "line" && previewPoints.length > 1) {
+        L.polyline(previewPoints, previewOptions).addTo(previewGroup);
+        infoText = `Longitud: ${formatDistance(computeLineDistance(previewPoints))}`;
+      }
+
+      if (session.tool === "polygon" && previewPoints.length > 1) {
+        if (previewPoints.length >= 3) {
+          L.polygon(previewPoints, previewOptions).addTo(previewGroup);
+          infoText = `Área: ${formatArea(computeGeodesicArea(previewPoints))}`;
+        } else {
+          L.polyline(previewPoints, previewOptions).addTo(previewGroup);
+        }
+      }
+
+      if (session.tool === "rectangle" && session.anchor && cursorLatLng) {
+        const bounds = L.latLngBounds(session.anchor, cursorLatLng);
+        L.rectangle(bounds, previewOptions).addTo(previewGroup);
+        infoText = `Área: ${formatArea(computeGeodesicArea(getRectangleLatLngs(bounds)))}`;
+      }
+
+      if (session.tool === "circle" && session.anchor && cursorLatLng) {
+        const radius = session.anchor.distanceTo(cursorLatLng);
+        L.circle(session.anchor, {
+          ...previewOptions,
+          radius,
+        }).addTo(previewGroup);
+        infoLatLng = cursorLatLng;
+        infoText = `Radio: ${formatDistance(radius)}`;
+      }
+
+      if (infoLatLng && infoText) {
+        L.marker(infoLatLng, {
+          pane: DRAW_PREVIEW_PANE,
+          interactive: false,
+          icon: L.divIcon({
+            className: "drawing-inline-measure-preview",
+            iconSize: null,
+            html: `
+              <span
+                style="
+                  display:inline-flex;
+                  align-items:center;
+                  justify-content:center;
+                  padding:2px 7px;
+                  border-radius:999px;
+                  background:rgba(105,27,50,0.82);
+                  color:#fff;
+                  font-family:Montserrat,sans-serif;
+                  font-size:11px;
+                  font-weight:700;
+                  line-height:1;
+                  letter-spacing:.01em;
+                  border:1px solid rgba(255,255,255,0.24);
+                  box-shadow:0 6px 14px rgba(0,0,0,0.14);
+                  white-space:nowrap;
+                  backdrop-filter:blur(6px);
+                "
+              >${escapeHtml(infoText)}</span>
+            `,
+          }),
+        })
+          .addTo(previewGroup);
+      }
+    },
+    []
+  );
+
+  const finalizeDrawingFeature = useCallback(
+    ({ type, latlngs = [], point = null, center = null, radius = 0, bounds = null }) => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      let label = "Trazo";
+      const typeLabelMap = {
+        point: "Punto",
+        line: "Línea",
+        polygon: "Polígono",
+        rectangle: "Rectángulo",
+        circle: "Círculo",
+      };
+      const typeLabel = typeLabelMap[type] || "Trazo";
+
+      if (type === "point" && point) {
+        label = `Punto ${drawnFeaturesRef.current.length + 1}`;
+      } else if (type === "line" && latlngs.length >= 2) {
+        label = `Línea ${drawnFeaturesRef.current.length + 1}`;
+      } else if (type === "circle" && center && radius > 0) {
+        label = `Círculo ${drawnFeaturesRef.current.length + 1}`;
+      } else if (type === "rectangle" && bounds) {
+        label = `Rectángulo ${drawnFeaturesRef.current.length + 1}`;
+        latlngs = getRectangleLatLngs(bounds);
+      } else if (type === "polygon" && latlngs.length >= 3) {
+        label = `Polígono ${drawnFeaturesRef.current.length + 1}`;
+      }
+
+      const measurement = buildDrawingMeasurement({ type, latlngs, center, radius, point, bounds });
+      const feature = {
+        id: `draw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        type,
+        typeLabel,
+        label,
+        point,
+        center,
+        radius,
+        latlngs,
+        measurement,
+      };
+
+      drawnFeaturesRef.current = [...drawnFeaturesRef.current, feature];
+      renderDrawnFeatures();
+      clearDrawingSession();
+    },
+    [clearDrawingSession, renderDrawnFeatures]
+  );
+
+  const finalizeCurrentDrawing = useCallback(() => {
+    const session = drawingStateRef.current;
+    if (!session.tool) return;
+
+    if (session.tool === "line" && session.points.length >= 2) {
+      finalizeDrawingFeature({ type: "line", latlngs: session.points.slice() });
+      return;
+    }
+
+    if (session.tool === "polygon" && session.points.length >= 3) {
+      finalizeDrawingFeature({ type: "polygon", latlngs: session.points.slice() });
+    }
+  }, [finalizeDrawingFeature]);
+
+  const clearAllDrawings = useCallback(() => {
+    drawingLayerGroupRef.current?.clearLayers?.();
+    drawingEditHandlesRef.current?.clearLayers?.();
+    drawnFeaturesRef.current = [];
+    setDrawnFeaturesState([]);
+    setDrawnFeatureCount(0);
+    setEditingFeatureId(null);
+    editingSnapshotRef.current = null;
+    clearDrawingSession();
+  }, [clearDrawingSession]);
+
+  const downloadDrawingsAsKml = useCallback(() => {
+    if (!drawnFeaturesRef.current.length) return;
+
+    const placemarks = drawnFeaturesRef.current.map(featureToKmlPlacemark).join("");
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Trazos del mapa</name>
+    ${placemarks}
+  </Document>
+</kml>`;
+
+    const blob = new Blob([kml], { type: "application/vnd.google-earth.kml+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `trazos-mapa-${new Date().toISOString().slice(0, 10)}.kml`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, []);
+
+  const buildEditingHandles = useCallback(
+    (feature) => {
+      const map = mapRef.current;
+      const handlesGroup = drawingEditHandlesRef.current;
+      if (!map || !handlesGroup || !feature) return;
+
+      handlesGroup.clearLayers();
+
+      const makeHandle = (latlng, onDrag) => {
+        const marker = L.marker(latlng, {
+          pane: DRAW_PREVIEW_PANE,
+          draggable: true,
+          autoPan: true,
+          icon: L.divIcon({
+            className: "drawing-edit-handle",
+            html: `<span style="width:14px;height:14px;border-radius:999px;background:#bc955b;border:2px solid #fff;box-shadow:0 8px 18px rgba(0,0,0,0.16);display:block;"></span>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+          }),
+        });
+        marker.on("drag", (event) => onDrag(event.target.getLatLng()));
+        marker.addTo(handlesGroup);
+      };
+
+      const updateFeature = (updater) => {
+        drawnFeaturesRef.current = drawnFeaturesRef.current.map((current) => {
+          if (current.id !== feature.id) return current;
+          const updated = updater(current);
+          return {
+            ...updated,
+            measurement: buildDrawingMeasurement(updated),
+          };
+        });
+        renderDrawnFeatures();
+      };
+
+      if (feature.type === "point") {
+        makeHandle(feature.point, (latlng) =>
+          updateFeature((current) => ({
+            ...current,
+            point: latlng,
+          }))
+        );
+        return;
+      }
+
+      if (feature.type === "line" || feature.type === "polygon" || feature.type === "rectangle") {
+        feature.latlngs.forEach((latlng, index) => {
+          makeHandle(latlng, (nextLatLng) =>
+            updateFeature((current) => {
+              const nextLatLngs = current.latlngs.map((point, pointIndex) => (pointIndex === index ? nextLatLng : point));
+              if (current.type === "rectangle" && nextLatLngs.length >= 4) {
+                const oppositeIndex = index === 0 ? 2 : index === 2 ? 0 : index === 1 ? 3 : 1;
+                const bounds = L.latLngBounds(nextLatLng, nextLatLngs[oppositeIndex]);
+                return { ...current, latlngs: getRectangleLatLngs(bounds) };
+              }
+              return { ...current, latlngs: nextLatLngs };
+            })
+          );
+        });
+        return;
+      }
+
+      if (feature.type === "circle") {
+        makeHandle(feature.center, (nextCenter) =>
+          updateFeature((current) => ({
+            ...current,
+            center: nextCenter,
+          }))
+        );
+        makeHandle(destinationPoint(feature.center, feature.radius, 90), (edgeLatLng) =>
+          updateFeature((current) => ({
+            ...current,
+            radius: current.center.distanceTo(edgeLatLng),
+          }))
+        );
+      }
+    },
+    [renderDrawnFeatures]
+  );
+
+  const handleEditFeature = useCallback(
+    (featureId) => {
+      const feature = drawnFeaturesRef.current.find((current) => current.id === featureId);
+      if (!feature) return;
+      setDrawingPanelOpen(true);
+      setActiveDrawingTool(null);
+      setEditingFeatureId(featureId);
+      editingSnapshotRef.current = JSON.parse(JSON.stringify(feature));
+      clearDrawingSession();
+      buildEditingHandles(feature);
+    },
+    [buildEditingHandles, clearDrawingSession]
+  );
+
+  const handleDeleteFeature = useCallback(
+    (featureId) => {
+      drawnFeaturesRef.current = drawnFeaturesRef.current.filter((feature) => feature.id !== featureId);
+      if (editingFeatureId === featureId) {
+        setEditingFeatureId(null);
+        editingSnapshotRef.current = null;
+        drawingEditHandlesRef.current?.clearLayers?.();
+      }
+      renderDrawnFeatures();
+    },
+    [editingFeatureId, renderDrawnFeatures]
+  );
+
+  const handleSaveFeatureEdit = useCallback(() => {
+    setEditingFeatureId(null);
+    editingSnapshotRef.current = null;
+    drawingEditHandlesRef.current?.clearLayers?.();
+    renderDrawnFeatures();
+  }, [renderDrawnFeatures]);
+
+  const handleCancelFeatureEdit = useCallback(() => {
+    if (!editingFeatureId || !editingSnapshotRef.current) return;
+    drawnFeaturesRef.current = drawnFeaturesRef.current.map((feature) =>
+      feature.id === editingFeatureId ? { ...editingSnapshotRef.current, measurement: buildDrawingMeasurement(editingSnapshotRef.current) } : feature
+    );
+    setEditingFeatureId(null);
+    editingSnapshotRef.current = null;
+    drawingEditHandlesRef.current?.clearLayers?.();
+    renderDrawnFeatures();
+  }, [editingFeatureId, renderDrawnFeatures]);
+
+  const closeDrawingPanel = useCallback(() => {
+    setDrawingPanelOpen(false);
+    setActiveDrawingTool(null);
+    setEditingFeatureId(null);
+    editingSnapshotRef.current = null;
+    drawingStateRef.current = { tool: null, points: [], anchor: null };
+    clearDrawingPreview();
+    drawingEditHandlesRef.current?.clearLayers?.();
+    setDrawingDraftState({
+      tool: null,
+      pointsCount: 0,
+      canFinish: false,
+      helperText: "",
+      measurementText: "",
+    });
+  }, [clearDrawingPreview]);
+
   const closeContextMenu = useCallback(() => {
     setContextMenuState(null);
   }, []);
@@ -1054,6 +1878,7 @@ export default function MapView({
   }, []);
 
   const openImportPanel = useCallback(() => {
+    closeDrawingPanel();
     setExportPanelState((current) => ({
       ...current,
       open: false,
@@ -1061,7 +1886,7 @@ export default function MapView({
       error: "",
     }));
     setImportPanelState((current) => ({ ...current, open: true, error: "" }));
-  }, []);
+  }, [closeDrawingPanel]);
 
   const closeImportPanel = useCallback(() => {
     setImportPanelState((current) => ({ ...current, open: false, loading: false, error: "" }));
@@ -1070,6 +1895,7 @@ export default function MapView({
   }, []);
 
   const openExportPanel = useCallback(() => {
+    closeDrawingPanel();
     closeImportPanel();
     setExportPanelState((current) => ({
       ...current,
@@ -1077,7 +1903,7 @@ export default function MapView({
       loading: false,
       error: "",
     }));
-  }, [closeImportPanel]);
+  }, [closeDrawingPanel, closeImportPanel]);
 
   const closeExportPanel = useCallback(() => {
     setExportPanelState((current) => ({
@@ -1087,6 +1913,37 @@ export default function MapView({
       error: "",
     }));
   }, []);
+
+  const openDrawingPanel = useCallback(() => {
+    closeExportPanel();
+    closeImportPanel();
+    setDrawingPanelOpen(true);
+  }, [closeExportPanel, closeImportPanel]);
+
+  const handleSelectDrawingTool = useCallback(
+    (toolId) => {
+      setDrawingPanelOpen(true);
+      setActiveDrawingTool((current) => {
+        const nextTool = current === toolId ? null : toolId;
+        setEditingFeatureId(null);
+        editingSnapshotRef.current = null;
+        drawingStateRef.current = {
+          tool: nextTool,
+          points: [],
+          anchor: null,
+        };
+        clearDrawingPreview();
+        drawingEditHandlesRef.current?.clearLayers?.();
+        syncDrawingDraft({
+          tool: nextTool,
+          points: [],
+          anchor: null,
+        });
+        return nextTool;
+      });
+    },
+    [clearDrawingPreview, syncDrawingDraft]
+  );
 
   const handleImportedFile = useCallback(
     async (file) => {
@@ -1406,6 +2263,12 @@ export default function MapView({
       subdomains: ["mt0", "mt1", "mt2", "mt3"],
     });
 
+    ensurePane(map, paneRef, DRAW_LAYER_PANE, 760);
+    ensurePane(map, paneRef, DRAW_PREVIEW_PANE, 770);
+    drawingLayerGroupRef.current = L.layerGroup().addTo(map);
+    drawingPreviewGroupRef.current = L.layerGroup().addTo(map);
+    drawingEditHandlesRef.current = L.layerGroup().addTo(map);
+
     L.control
       .layers(
         {
@@ -1722,9 +2585,62 @@ export default function MapView({
       },
     });
 
+    const DrawingControl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const wrapper = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+        wrapper.style.marginTop = "10px";
+        wrapper.style.border = "none";
+        wrapper.style.background = "transparent";
+
+        const button = L.DomUtil.create("button", "", wrapper);
+        button.type = "button";
+        button.title = "Herramientas de dibujo";
+        button.setAttribute("aria-label", "Herramientas de dibujo");
+        button.style.width = "34px";
+        button.style.height = "34px";
+        button.style.display = "inline-flex";
+        button.style.alignItems = "center";
+        button.style.justifyContent = "center";
+        button.style.border = "1px solid rgba(0,0,0,0.12)";
+        button.style.borderRadius = "10px";
+        button.style.background = "rgba(255,255,255,0.95)";
+        button.style.backdropFilter = "blur(10px)";
+        button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+        button.style.cursor = "pointer";
+        button.style.transition = "transform 120ms ease, box-shadow 120ms ease, background 120ms ease";
+        button.style.color = "#7a1d31";
+        button.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 18l5.5-1.3L19 7.2 16.8 5 7.3 14.5 6 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M14.8 7l2.2 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        `;
+
+        L.DomEvent.disableClickPropagation(wrapper);
+        L.DomEvent.disableScrollPropagation(wrapper);
+        L.DomEvent.on(button, "click", (event) => {
+          L.DomEvent.preventDefault(event);
+          L.DomEvent.stopPropagation(event);
+          openDrawingPanel();
+        });
+        L.DomEvent.on(button, "mouseenter", () => {
+          button.style.boxShadow = "0 14px 28px rgba(0,0,0,0.18)";
+          button.style.transform = "translateY(-1px)";
+        });
+        L.DomEvent.on(button, "mouseleave", () => {
+          button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+          button.style.transform = "translateY(0)";
+        });
+
+        return wrapper;
+      },
+    });
+
     new LocateControl().addTo(map);
     new ImportControl().addTo(map);
     new ExportControl().addTo(map);
+    new DrawingControl().addTo(map);
 
     mapRef.current = map;
 
@@ -1751,8 +2667,20 @@ export default function MapView({
         importedOverlayRef.current.remove();
         importedOverlayRef.current = null;
       }
+      if (drawingLayerGroupRef.current) {
+        drawingLayerGroupRef.current.remove();
+        drawingLayerGroupRef.current = null;
+      }
+      if (drawingPreviewGroupRef.current) {
+        drawingPreviewGroupRef.current.remove();
+        drawingPreviewGroupRef.current = null;
+      }
+      if (drawingEditHandlesRef.current) {
+        drawingEditHandlesRef.current.remove();
+        drawingEditHandlesRef.current = null;
+      }
     };
-  }, [openExportPanel, openImportPanel]);
+  }, [openDrawingPanel, openExportPanel, openImportPanel]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1870,14 +2798,157 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return undefined;
 
+    if (activeDrawingTool || editingFeatureId) {
+      map.doubleClickZoom.disable();
+    } else {
+      map.doubleClickZoom.enable();
+      clearDrawingPreview();
+      if (!activeDrawingTool) {
+        drawingStateRef.current = { tool: null, points: [], anchor: null };
+        syncDrawingDraft({ tool: null, points: [], anchor: null });
+      }
+    }
+
+    return () => {
+      map.doubleClickZoom.enable();
+    };
+  }, [activeDrawingTool, clearDrawingPreview, editingFeatureId, syncDrawingDraft]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return undefined;
+
+    const handleDrawingClick = (event) => {
+      if (!activeDrawingTool) return;
+
+      const session = drawingStateRef.current;
+      const latlng = event.latlng;
+
+      if (activeDrawingTool === "point") {
+        finalizeDrawingFeature({ type: "point", point: latlng });
+        return;
+      }
+
+      if (activeDrawingTool === "line" || activeDrawingTool === "polygon") {
+        if (drawClickTimerRef.current) clearTimeout(drawClickTimerRef.current);
+        drawClickTimerRef.current = window.setTimeout(() => {
+          const latestSession = drawingStateRef.current;
+          const nextPoints = [...latestSession.points, latlng];
+          drawingStateRef.current = {
+            tool: activeDrawingTool,
+            points: nextPoints,
+            anchor: null,
+          };
+          syncDrawingDraft({ tool: activeDrawingTool, points: nextPoints, anchor: null });
+          updateDrawingPreview();
+          drawClickTimerRef.current = null;
+        }, 180);
+        return;
+      }
+
+      if (activeDrawingTool === "rectangle" || activeDrawingTool === "circle") {
+        if (!session.anchor) {
+          drawingStateRef.current = {
+            tool: activeDrawingTool,
+            points: [],
+            anchor: latlng,
+          };
+          syncDrawingDraft({ tool: activeDrawingTool, points: [], anchor: latlng });
+          updateDrawingPreview();
+          return;
+        }
+
+        if (activeDrawingTool === "rectangle") {
+          finalizeDrawingFeature({
+            type: "rectangle",
+            bounds: L.latLngBounds(session.anchor, latlng),
+          });
+          return;
+        }
+
+        finalizeDrawingFeature({
+          type: "circle",
+          center: session.anchor,
+          radius: session.anchor.distanceTo(latlng),
+        });
+      }
+    };
+
+    const handleDrawingMouseMove = (event) => {
+      if (!activeDrawingTool) return;
+
+      const session = drawingStateRef.current;
+      if (activeDrawingTool === "point") {
+        updateDrawingPreview(event.latlng);
+        return;
+      }
+
+      if (activeDrawingTool === "line" || activeDrawingTool === "polygon") {
+        updateDrawingPreview(event.latlng);
+        return;
+      }
+
+      if ((activeDrawingTool === "rectangle" || activeDrawingTool === "circle") && session.anchor) {
+        drawingStateRef.current = {
+          ...session,
+          points: [event.latlng],
+        };
+        syncDrawingDraft({
+          tool: activeDrawingTool,
+          points: [event.latlng],
+          anchor: session.anchor,
+        });
+        updateDrawingPreview(event.latlng);
+      }
+    };
+
+    const handleDrawingDoubleClick = (event) => {
+      if (!activeDrawingTool) return;
+      if (activeDrawingTool === "line" || activeDrawingTool === "polygon") {
+        if (drawClickTimerRef.current) {
+          clearTimeout(drawClickTimerRef.current);
+          drawClickTimerRef.current = null;
+        }
+        const session = drawingStateRef.current;
+        const nextPoints = [...session.points, event.latlng];
+        const dedupedPoints =
+          nextPoints.length >= 2 && nextPoints.at(-1).distanceTo(nextPoints.at(-2)) < 1 ? nextPoints.slice(0, -1) : nextPoints;
+        drawingStateRef.current = {
+          tool: activeDrawingTool,
+          points: dedupedPoints,
+          anchor: null,
+        };
+        finalizeCurrentDrawing();
+      }
+    };
+
+    map.on("click", handleDrawingClick);
+    map.on("mousemove", handleDrawingMouseMove);
+    map.on("dblclick", handleDrawingDoubleClick);
+
+    return () => {
+      if (drawClickTimerRef.current) {
+        clearTimeout(drawClickTimerRef.current);
+        drawClickTimerRef.current = null;
+      }
+      map.off("click", handleDrawingClick);
+      map.off("mousemove", handleDrawingMouseMove);
+      map.off("dblclick", handleDrawingDoubleClick);
+    };
+  }, [activeDrawingTool, finalizeCurrentDrawing, finalizeDrawingFeature, syncDrawingDraft, updateDrawingPreview]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return undefined;
+
     if (mosaicStatus.isUpdating || movingRef.current) {
       mapBusyRef.current = true;
-      if (!movingRef.current) updateCursor("wait");
+      if (!movingRef.current && !activeDrawingTool && !editingFeatureId) updateCursor("wait");
       return undefined;
     }
 
     mapBusyRef.current = false;
-    updateCursor("grab");
+    updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : "grab");
 
     if (pendingClickRef.current) {
       const latlng = pendingClickRef.current;
@@ -1890,13 +2961,30 @@ export default function MapView({
     }
 
     return undefined;
-  }, [mosaicStatus.isUpdating, runPopupQuery, updateCursor]);
+  }, [activeDrawingTool, editingFeatureId, mosaicStatus.isUpdating, runPopupQuery, updateCursor]);
+
+  useEffect(() => {
+    renderDrawnFeatures();
+    if (!editingFeatureId) {
+      drawingEditHandlesRef.current?.clearLayers?.();
+      return;
+    }
+
+    const feature = drawnFeaturesRef.current.find((current) => current.id === editingFeatureId);
+    if (!feature) {
+      drawingEditHandlesRef.current?.clearLayers?.();
+      return;
+    }
+
+    buildEditingHandles(feature);
+  }, [buildEditingHandles, editingFeatureId, renderDrawnFeatures]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return undefined;
 
     const handleClick = async (event) => {
+      if (activeDrawingTool || editingFeatureId) return;
       closeContextMenu();
       pendingClickRef.current = event.latlng;
 
@@ -1918,6 +3006,10 @@ export default function MapView({
 
     const handleMouseMove = (event) => {
       setMouseCoordinates(formatCoordinatePair(event.latlng));
+      if (activeDrawingTool || editingFeatureId) {
+        if (!movingRef.current && !mapBusyRef.current) updateCursor("crosshair");
+        return;
+      }
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       abortControllerRef(hoverControllerRef);
 
@@ -1945,6 +3037,10 @@ export default function MapView({
     };
 
     const handleMouseOut = () => {
+      if (activeDrawingTool || editingFeatureId) {
+        updateCursor("crosshair");
+        return;
+      }
       hoverSeqRef.current += 1;
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       abortControllerRef(hoverControllerRef);
@@ -1952,6 +3048,11 @@ export default function MapView({
     };
 
     const handleContextMenu = (event) => {
+      if (activeDrawingTool || editingFeatureId) {
+        event.originalEvent?.preventDefault?.();
+        event.originalEvent?.stopPropagation?.();
+        return;
+      }
       event.originalEvent?.preventDefault?.();
       event.originalEvent?.stopPropagation?.();
       const coordsText = formatCoordinatePair(event.latlng);
@@ -1977,7 +3078,7 @@ export default function MapView({
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       if (moveResumeTimerRef.current) clearTimeout(moveResumeTimerRef.current);
       abortControllerRef(hoverControllerRef);
-      updateCursor("grabbing");
+      updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : "grabbing");
     };
 
     const handleMoveEnd = () => {
@@ -1986,12 +3087,12 @@ export default function MapView({
         movingRef.current = false;
         if (mosaicStatus.isUpdating) {
           mapBusyRef.current = true;
-          updateCursor("wait");
+          updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : "wait");
           return;
         }
 
         mapBusyRef.current = false;
-        updateCursor("grab");
+        updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : "grab");
         if (pendingClickRef.current) {
           const latlng = pendingClickRef.current;
           pendingClickRef.current = null;
@@ -2022,7 +3123,7 @@ export default function MapView({
       abortControllerRef(clickControllerRef);
       abortControllerRef(hoverControllerRef);
     };
-  }, [closeContextMenu, hoverableDefs, mosaicStatus.isUpdating, queryableDefs, runPopupQuery, updateCursor]);
+  }, [activeDrawingTool, closeContextMenu, editingFeatureId, hoverableDefs, mosaicStatus.isUpdating, queryableDefs, runPopupQuery, updateCursor]);
 
   useEffect(() => {
     if (!contextMenuState) return undefined;
@@ -2448,6 +3549,27 @@ export default function MapView({
           </div>
         </div>
       ) : null}
+      <DrawingToolsPanel
+        open={drawingPanelOpen}
+        activeTool={activeDrawingTool}
+        hasSession={drawingDraftState.pointsCount > 0 || Boolean(drawingStateRef.current.anchor)}
+        canFinish={drawingDraftState.canFinish}
+        measurementText={drawingDraftState.measurementText}
+        helperText={drawingDraftState.helperText}
+        featureCount={drawnFeatureCount}
+        features={drawnFeaturesState}
+        editingFeatureId={editingFeatureId}
+        onClose={closeDrawingPanel}
+        onSelectTool={handleSelectDrawingTool}
+        onFinish={finalizeCurrentDrawing}
+        onCancel={clearDrawingSession}
+        onClear={clearAllDrawings}
+        onDownloadKml={downloadDrawingsAsKml}
+        onEditFeature={handleEditFeature}
+        onDeleteFeature={handleDeleteFeature}
+        onSaveEdit={handleSaveFeatureEdit}
+        onCancelEdit={handleCancelFeatureEdit}
+      />
       {loadingSummary?.total > 0 && loadingSummary.isBusy && (
         <div
           style={{
