@@ -14,6 +14,13 @@ import { renderPopupContent } from "@/data/popupSchemas";
 const FALLBACK_BOUNDS = L.latLngBounds(HIDALGO_REGION_BOUNDS[0], HIDALGO_REGION_BOUNDS[1]);
 const clampZ = (z) => Math.max(-9999, Math.min(9999, Math.round(Number(z ?? 400))));
 const COORDINATE_DECIMALS = 7;
+const IMPORT_LAYER_PANE = "pane_uploaded_vector";
+const MAX_IMPORT_FILE_SIZE_BYTES = 12 * 1024 * 1024;
+const SAFE_IMPORT_EXTENSIONS = new Set([".geojson", ".kml"]);
+const SAFE_IMPORT_MIME_TYPES = {
+  ".geojson": new Set(["", "application/geo+json", "application/json"]),
+  ".kml": new Set(["", "application/vnd.google-earth.kml+xml", "application/xml", "text/xml"]),
+};
 
 function formatCoordinatePair(latlng) {
   if (!latlng) return "20.0830998, -98.7948132";
@@ -24,6 +31,279 @@ function clampMenuPosition(point, menuSize, containerSize) {
   const left = Math.max(12, Math.min(point.x - menuSize.width + 22, containerSize.x - menuSize.width - 12));
   const top = Math.max(12, Math.min(point.y - menuSize.height - 14, containerSize.y - menuSize.height - 12));
   return { left, top };
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error(`No se pudo leer el archivo ${file?.name || ""}`.trim()));
+    reader.readAsText(file);
+  });
+}
+
+function getFileExtension(fileName) {
+  const normalizedName = String(fileName || "").trim().toLowerCase();
+  const lastDotIndex = normalizedName.lastIndexOf(".");
+  return lastDotIndex >= 0 ? normalizedName.slice(lastDotIndex) : "";
+}
+
+function validateImportedFile(file) {
+  const extension = getFileExtension(file?.name);
+  const mimeType = String(file?.type || "").trim().toLowerCase();
+
+  if (!SAFE_IMPORT_EXTENSIONS.has(extension)) {
+    return "Por seguridad, solo se permiten archivos KML o GeoJSON.";
+  }
+
+  const allowedMimeTypes = SAFE_IMPORT_MIME_TYPES[extension];
+  if (allowedMimeTypes && !allowedMimeTypes.has(mimeType)) {
+    return "El archivo no coincide con un formato KML o GeoJSON válido.";
+  }
+
+  return "";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function parseCoordinateTuple(pair) {
+  const [lng, lat, altitude] = String(pair || "")
+    .split(",")
+    .map((value) => Number(String(value).trim()));
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return Number.isFinite(altitude) ? [lng, lat, altitude] : [lng, lat];
+}
+
+function parseCoordinatesText(text) {
+  return String(text || "")
+    .trim()
+    .split(/\s+/)
+    .map(parseCoordinateTuple)
+    .filter(Boolean);
+}
+
+function getNodeText(node, tagNames) {
+  for (const tagName of tagNames) {
+    const match = node.getElementsByTagName(tagName)?.[0];
+    const text = match?.textContent?.trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+function extractKmlProperties(placemark) {
+  const properties = {};
+  const name = getNodeText(placemark, ["name"]);
+  const description = getNodeText(placemark, ["description"]);
+  if (name) properties.name = name;
+  if (description) properties.description = description;
+
+  const simpleDatas = Array.from(placemark.getElementsByTagName("SimpleData") || []);
+  simpleDatas.forEach((item) => {
+    const key = item.getAttribute("name");
+    if (!key) return;
+    properties[key] = item.textContent?.trim() || "";
+  });
+
+  const datas = Array.from(placemark.getElementsByTagName("Data") || []);
+  datas.forEach((item) => {
+    const key = item.getAttribute("name");
+    if (!key) return;
+    const value = item.getElementsByTagName("value")?.[0]?.textContent?.trim() || "";
+    properties[key] = value;
+  });
+
+  return properties;
+}
+
+function extractKmlGeometry(node) {
+  if (!node) return null;
+
+  const pointNode = node.getElementsByTagName("Point")?.[0];
+  if (pointNode) {
+    const coordinates = parseCoordinatesText(getNodeText(pointNode, ["coordinates"]));
+    if (coordinates[0]) {
+      return {
+        type: "Point",
+        coordinates: coordinates[0],
+      };
+    }
+  }
+
+  const lineNode = node.getElementsByTagName("LineString")?.[0];
+  if (lineNode) {
+    const coordinates = parseCoordinatesText(getNodeText(lineNode, ["coordinates"]));
+    if (coordinates.length > 1) {
+      return {
+        type: "LineString",
+        coordinates,
+      };
+    }
+  }
+
+  const polygonNode = node.getElementsByTagName("Polygon")?.[0];
+  if (polygonNode) {
+    const boundaries = [];
+    const outer = polygonNode.getElementsByTagName("outerBoundaryIs")?.[0];
+    const innerNodes = Array.from(polygonNode.getElementsByTagName("innerBoundaryIs") || []);
+
+    if (outer) {
+      const coords = parseCoordinatesText(getNodeText(outer, ["coordinates"]));
+      if (coords.length >= 4) boundaries.push(coords);
+    }
+
+    innerNodes.forEach((inner) => {
+      const coords = parseCoordinatesText(getNodeText(inner, ["coordinates"]));
+      if (coords.length >= 4) boundaries.push(coords);
+    });
+
+    if (boundaries.length > 0) {
+      return {
+        type: "Polygon",
+        coordinates: boundaries,
+      };
+    }
+  }
+
+  const multiGeometryNode = node.getElementsByTagName("MultiGeometry")?.[0];
+  if (multiGeometryNode) {
+    const childGeometries = Array.from(multiGeometryNode.children || [])
+      .map((child) => extractKmlGeometry({ getElementsByTagName: (tagName) => child.tagName === tagName ? [child] : [] }))
+      .filter(Boolean);
+
+    if (childGeometries.length > 0) {
+      return {
+        type: "GeometryCollection",
+        geometries: childGeometries,
+      };
+    }
+  }
+
+  return null;
+}
+
+function parseKml(text) {
+  const parser = new DOMParser();
+  const documentNode = parser.parseFromString(text, "application/xml");
+  const parseError = documentNode.getElementsByTagName("parsererror")?.[0];
+  if (parseError) {
+    throw new Error("El archivo KML no tiene un formato válido.");
+  }
+
+  const placemarks = Array.from(documentNode.getElementsByTagName("Placemark") || []);
+  const features = placemarks
+    .map((placemark) => {
+      const geometry = extractKmlGeometry(placemark);
+      if (!geometry) return null;
+      return {
+        type: "Feature",
+        properties: extractKmlProperties(placemark),
+        geometry,
+      };
+    })
+    .filter(Boolean);
+
+  if (features.length === 0) {
+    throw new Error("El KML no contiene geometrías compatibles.");
+  }
+
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+}
+
+function normalizeGeoJsonPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("El archivo no contiene un GeoJSON válido.");
+  }
+
+  if (payload.type === "FeatureCollection") return payload;
+  if (payload.type === "Feature") {
+    return {
+      type: "FeatureCollection",
+      features: [payload],
+    };
+  }
+
+  if (payload.type && payload.coordinates) {
+    return {
+      type: "FeatureCollection",
+      features: [{ type: "Feature", properties: {}, geometry: payload }],
+    };
+  }
+
+  throw new Error("El archivo no contiene un GeoJSON válido.");
+}
+
+function parseImportedFile(fileName, text) {
+  const extension = getFileExtension(fileName);
+  if (extension === ".kml") return parseKml(text);
+  if (extension === ".geojson") {
+    return normalizeGeoJsonPayload(JSON.parse(text));
+  }
+  throw new Error("Por seguridad, solo se permiten archivos KML o GeoJSON.");
+}
+
+function buildPropertiesPopup(properties = {}) {
+  const entries = Object.entries(properties || {}).filter(([, value]) => value != null && String(value).trim() !== "");
+  if (entries.length === 0) {
+    return `<div style="font-family:Montserrat,sans-serif;font-size:12px;color:#333;">Sin atributos disponibles</div>`;
+  }
+
+  const rows = entries
+    .slice(0, 20)
+    .map(
+      ([key, value]) => `
+        <div style="display:grid;gap:2px;padding:6px 0;border-top:1px solid rgba(0,0,0,0.06);">
+          <strong style="font-size:11px;color:#7a1d31;text-transform:uppercase;letter-spacing:.04em;">${escapeHtml(key)}</strong>
+          <span style="font-size:12px;color:#2e2e2e;word-break:break-word;">${escapeHtml(value)}</span>
+        </div>
+      `
+    )
+    .join("");
+
+  return `<div style="font-family:Montserrat,sans-serif;min-width:180px;">${rows}</div>`;
+}
+
+function createImportedLayer(map, geojson, fileName) {
+  ensurePane(map, { current: {} }, IMPORT_LAYER_PANE, 650);
+
+  const layer = L.geoJSON(geojson, {
+    pane: IMPORT_LAYER_PANE,
+    style: (feature) => ({
+      color: feature?.geometry?.type?.includes("Line") ? "#0f6cbd" : "#7a1d31",
+      weight: feature?.geometry?.type?.includes("Line") ? 3 : 2.2,
+      opacity: 0.95,
+      fillColor: "#bc955b",
+      fillOpacity: feature?.geometry?.type?.includes("Polygon") ? 0.24 : 0,
+    }),
+    pointToLayer: (feature, latlng) =>
+      L.circleMarker(latlng, {
+        pane: IMPORT_LAYER_PANE,
+        radius: 7,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: "#7a1d31",
+        fillOpacity: 1,
+      }).bindPopup(buildPropertiesPopup(feature?.properties || { Archivo: fileName })),
+    onEachFeature: (feature, layer) => {
+      if (typeof layer.bindPopup === "function" && !layer.getPopup()) {
+        layer.bindPopup(buildPropertiesPopup(feature?.properties || { Archivo: fileName }));
+      }
+    },
+  });
+
+  layer.__uploadedFileName = fileName;
+  return layer;
 }
 
 function boundsFromConfig(bounds) {
@@ -153,6 +433,8 @@ export default function MapView({
   const clickControllerRef = useRef(null);
   const hoverControllerRef = useRef(null);
   const locationOverlayRef = useRef(null);
+  const importedOverlayRef = useRef(null);
+  const importInputRef = useRef(null);
   const movingRef = useRef(false);
   const mapBusyRef = useRef(false);
   const pendingClickRef = useRef(null);
@@ -169,6 +451,12 @@ export default function MapView({
   });
   const [mouseCoordinates, setMouseCoordinates] = useState(formatCoordinatePair(null));
   const [contextMenuState, setContextMenuState] = useState(null);
+  const [importPanelState, setImportPanelState] = useState({
+    open: false,
+    loading: false,
+    error: "",
+  });
+  const [importSanitizeHelpOpen, setImportSanitizeHelpOpen] = useState(false);
 
   const visibleDefs = useMemo(
     () => [...selectedLayers].sort((a, b) => getLayerZ(a, zMap) - getLayerZ(b, zMap)),
@@ -350,6 +638,96 @@ export default function MapView({
       console.error("Could not copy coordinates", error);
     }
   }, []);
+
+  const openImportPanel = useCallback(() => {
+    setImportPanelState((current) => ({ ...current, open: true, error: "" }));
+  }, []);
+
+  const closeImportPanel = useCallback(() => {
+    setImportPanelState((current) => ({ ...current, open: false, loading: false, error: "" }));
+    setImportSanitizeHelpOpen(false);
+    if (importInputRef.current) importInputRef.current.value = "";
+  }, []);
+
+  const handleImportedFile = useCallback(
+    async (file) => {
+      const map = mapRef.current;
+      if (!map || !file) return;
+
+      const importValidationError = validateImportedFile(file);
+      if (importValidationError) {
+        setImportPanelState((current) => ({
+          ...current,
+          open: true,
+          loading: false,
+          error: importValidationError,
+        }));
+        return;
+      }
+
+      if (file.size > MAX_IMPORT_FILE_SIZE_BYTES) {
+        setImportPanelState((current) => ({
+          ...current,
+          open: true,
+          loading: false,
+          error: "Limita tus archivos a 12 MB.",
+        }));
+        return;
+      }
+
+      setImportPanelState((current) => ({
+        ...current,
+        open: true,
+        loading: true,
+        error: "",
+      }));
+
+      try {
+        const text = await readFileAsText(file);
+        const geojson = parseImportedFile(file.name, text);
+
+        if (importedOverlayRef.current) {
+          importedOverlayRef.current.remove();
+          importedOverlayRef.current = null;
+        }
+
+        const layer = createImportedLayer(map, geojson, file.name).addTo(map);
+        importedOverlayRef.current = layer;
+
+        const bounds = layer.getBounds?.();
+        if (bounds?.isValid?.()) {
+          map.flyToBounds(bounds, {
+            padding: [30, 30],
+            maxZoom: 16,
+            duration: 0.75,
+          });
+        }
+
+        L.popup({ autoClose: true, closeButton: false, offset: [0, -16] })
+          .setLatLng(map.getCenter())
+          .setContent(
+            `<div style="font-family:Montserrat,sans-serif;font-size:12px;color:#222;padding:2px 4px;">
+              <strong style="color:#1d6fa5;display:block;margin-bottom:2px;">Archivo importado</strong>
+              <span style="display:block;background:rgba(29,111,165,0.08);padding:6px 8px;border-radius:10px;">${escapeHtml(file.name)}</span>
+            </div>`
+          )
+          .openOn(map);
+
+        closeImportPanel();
+      } catch (error) {
+        console.error("Import failed", error);
+        setImportPanelState((current) => ({
+          ...current,
+          open: true,
+          loading: false,
+          error: error?.message || "No se pudo importar el archivo.",
+        }));
+      } finally {
+        if (importInputRef.current) importInputRef.current.value = "";
+      }
+    },
+    [closeImportPanel]
+  );
 
   const updateCursor = useCallback(
     (cursor) => {
@@ -654,7 +1032,62 @@ export default function MapView({
       },
     });
 
+    const ImportControl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const wrapper = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+        wrapper.style.marginTop = "10px";
+        wrapper.style.border = "none";
+        wrapper.style.background = "transparent";
+
+        const button = L.DomUtil.create("button", "", wrapper);
+        button.type = "button";
+        button.title = "Agregar KML o GeoJSON";
+        button.setAttribute("aria-label", "Agregar KML o GeoJSON");
+        button.style.width = "34px";
+        button.style.height = "34px";
+        button.style.display = "inline-flex";
+        button.style.alignItems = "center";
+        button.style.justifyContent = "center";
+        button.style.border = "1px solid rgba(0,0,0,0.12)";
+        button.style.borderRadius = "10px";
+        button.style.background = "rgba(255,255,255,0.95)";
+        button.style.backdropFilter = "blur(10px)";
+        button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+        button.style.cursor = "pointer";
+        button.style.transition = "transform 120ms ease, box-shadow 120ms ease, background 120ms ease";
+        button.style.color = "#7a1d31";
+        button.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M6 18.5h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.45"/>
+          </svg>
+        `;
+
+        L.DomEvent.disableClickPropagation(wrapper);
+        L.DomEvent.disableScrollPropagation(wrapper);
+        L.DomEvent.on(button, "click", (event) => {
+          L.DomEvent.preventDefault(event);
+          L.DomEvent.stopPropagation(event);
+          openImportPanel();
+        });
+        L.DomEvent.on(button, "mouseenter", () => {
+          button.style.boxShadow = "0 14px 28px rgba(0,0,0,0.18)";
+          button.style.transform = "translateY(-1px)";
+        });
+        L.DomEvent.on(button, "mouseleave", () => {
+          if (!button.disabled) {
+            button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+            button.style.transform = "translateY(0)";
+          }
+        });
+
+        return wrapper;
+      },
+    });
+
     new LocateControl().addTo(map);
+    new ImportControl().addTo(map);
 
     mapRef.current = map;
 
@@ -677,8 +1110,12 @@ export default function MapView({
         locationOverlayRef.current.remove();
         locationOverlayRef.current = null;
       }
+      if (importedOverlayRef.current) {
+        importedOverlayRef.current.remove();
+        importedOverlayRef.current = null;
+      }
     };
-  }, []);
+  }, [openImportPanel]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -968,8 +1405,19 @@ export default function MapView({
       style={{ position: "relative", width: "100%", height: "100%" }}
       onClick={() => {
         if (contextMenuState) closeContextMenu();
+        if (importPanelState.open) closeImportPanel();
       }}
     >
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".geojson,.kml"
+        style={{ display: "none" }}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void handleImportedFile(file);
+        }}
+      />
       {mosaicStatus.isUpdating && (
         <div
           style={{
@@ -1024,6 +1472,186 @@ export default function MapView({
           </span>
         </div>
       )}
+      {importPanelState.open ? (
+        <div
+          onClick={(event) => event.stopPropagation()}
+          style={{
+            position: "absolute",
+            top: 62,
+            left: 54,
+            zIndex: 20008,
+            width: 298,
+            padding: 14,
+            borderRadius: 18,
+            background: "rgba(255,255,255,0.96)",
+            border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 18px 38px rgba(0,0,0,0.2)",
+            backdropFilter: "blur(14px)",
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ display: "grid", gap: 3 }}>
+              <strong style={{ fontSize: 13, color: "#202020" }}>Subir una capa</strong>
+            </div>
+            <button
+              type="button"
+              aria-label="Cerrar"
+              onClick={closeImportPanel}
+              style={{
+                width: 28,
+                height: 28,
+                border: "none",
+                borderRadius: 999,
+                background: "rgba(0,0,0,0.05)",
+                color: "#7d7d7d",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <div
+            style={{
+              padding: "2px 0 0",
+              display: "grid",
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 11, color: "#7a1d31", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>
+                Formatos habilitados
+              </span>
+              <span style={{ fontSize: 12.5, color: "#2e2e2e" }}>KML y GeoJSON</span>
+            </div>
+            <div style={{ height: 1, background: "linear-gradient(90deg, rgba(122,29,49,0.12), rgba(188,149,91,0.22), rgba(122,29,49,0.04))" }} />
+            <div style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 11, color: "#7a1d31", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>
+                Validación
+              </span>
+              <span style={{ fontSize: 12.5, color: "#2e2e2e" }}>Limita tus archivos a 12 MB.</span>
+            </div>
+          </div>
+          <div style={{ display: "grid", gap: 5 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <span style={{ fontSize: 11.5, color: "#666", lineHeight: 1.45 }}>
+                Solo se leen geometrías y atributos de texto. El contenido se sanitiza antes de mostrarse.
+              </span>
+              <div
+                style={{ position: "relative", flexShrink: 0 }}
+                onMouseEnter={() => setImportSanitizeHelpOpen(true)}
+                onMouseLeave={() => setImportSanitizeHelpOpen(false)}
+              >
+                <button
+                  type="button"
+                  aria-label="Cómo funciona la sanitización"
+                  onClick={() => setImportSanitizeHelpOpen((current) => !current)}
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 999,
+                    border: "1px solid rgba(122,29,49,0.14)",
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(188,149,91,0.12))",
+                    color: "#7a1d31",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    boxShadow: "0 6px 12px rgba(0,0,0,0.08)",
+                    transition: "transform 120ms ease, box-shadow 120ms ease",
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M12 10.2V16.1" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <circle cx="12" cy="7.4" r="1.1" fill="currentColor" />
+                  </svg>
+                </button>
+                {importSanitizeHelpOpen ? (
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "calc(100% + 8px)",
+                      width: 220,
+                      padding: "10px 12px",
+                      borderRadius: 14,
+                      background: "rgba(255,255,255,0.98)",
+                      color: "#444",
+                      fontSize: 11.5,
+                      lineHeight: 1.5,
+                      border: "1px solid rgba(122,29,49,0.12)",
+                      boxShadow: "0 16px 30px rgba(0,0,0,0.12)",
+                      zIndex: 8,
+                    }}
+                  >
+                    Revisamos el archivo como texto, extraemos solo geometrías y atributos, y convertimos caracteres especiales para que se muestren como texto en vez de ejecutarse.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            {importPanelState.error ? (
+              <span
+                style={{
+                  fontSize: 11.5,
+                  color: "#9f2241",
+                  background: "rgba(159,34,65,0.08)",
+                  border: "1px solid rgba(159,34,65,0.12)",
+                  padding: "8px 10px",
+                  borderRadius: 12,
+                }}
+              >
+                {importPanelState.error}
+              </span>
+            ) : null}
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="button"
+              disabled={importPanelState.loading}
+              onClick={() => importInputRef.current?.click()}
+              style={{
+                flex: 1,
+                padding: "11px 12px",
+                borderRadius: 14,
+                border: "1px solid rgba(122,29,49,0.14)",
+                background: importPanelState.loading
+                  ? "rgba(0,0,0,0.05)"
+                  : "linear-gradient(135deg, rgba(122,29,49,0.08), rgba(188,149,91,0.18))",
+                color: "#7a1d31",
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: importPanelState.loading ? "wait" : "pointer",
+                boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
+              }}
+            >
+              {importPanelState.loading ? "Cargando..." : "Seleccionar archivo"}
+            </button>
+            <button
+              type="button"
+              onClick={closeImportPanel}
+              style={{
+                padding: "11px 12px",
+                borderRadius: 14,
+                border: "1px solid rgba(0,0,0,0.08)",
+                background: "rgba(255,255,255,0.8)",
+                color: "#505050",
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : null}
       {loadingSummary?.total > 0 && loadingSummary.isBusy && (
         <div
           style={{
