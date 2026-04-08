@@ -3,12 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import LegendDock from "./LegendDock";
 import { GEOSERVER_CONFIG, HIDALGO_REGION_BOUNDS } from "@/config/geoserver";
 import { createWmsLayer } from "@/lib/geoserver/client";
 import { resolveTopmostFeatureAtLatLng } from "@/lib/geoserver/interaction";
 import { extendUnionBounds, resolveLayerBounds } from "@/lib/geoserver/runtime";
 import { loadLegacyLocalLayer } from "@/lib/geoserver/legacyLocalLayers";
+import { getLegendItems } from "@/data/legendCatalog";
 import { renderPopupContent } from "@/data/popupSchemas";
 
 const FALLBACK_BOUNDS = L.latLngBounds(HIDALGO_REGION_BOUNDS[0], HIDALGO_REGION_BOUNDS[1]);
@@ -20,6 +23,41 @@ const SAFE_IMPORT_EXTENSIONS = new Set([".geojson", ".kml"]);
 const SAFE_IMPORT_MIME_TYPES = {
   ".geojson": new Set(["", "application/geo+json", "application/json"]),
   ".kml": new Set(["", "application/vnd.google-earth.kml+xml", "application/xml", "text/xml"]),
+};
+const EXPORT_PAGE_PRESETS = {
+  letter: {
+    label: "Carta",
+    pageSize: "letter landscape",
+    pageLabel: "Carta",
+    pdfWidthMm: 279.4,
+    pdfHeightMm: 215.9,
+    pixelWidth: 1056,
+    pixelHeight: 816,
+    maxLegendUnitsFirstPage: 16,
+    maxLegendUnitsExtraPage: 28,
+  },
+  legal: {
+    label: "Legal / Oficio",
+    pageSize: "legal landscape",
+    pageLabel: "Legal / Oficio",
+    pdfWidthMm: 355.6,
+    pdfHeightMm: 215.9,
+    pixelWidth: 1344,
+    pixelHeight: 816,
+    maxLegendUnitsFirstPage: 22,
+    maxLegendUnitsExtraPage: 36,
+  },
+  tabloid: {
+    label: "Tabloide / Doble carta",
+    pageSize: "tabloid landscape",
+    pageLabel: "Tabloide / Doble carta",
+    pdfWidthMm: 431.8,
+    pdfHeightMm: 279.4,
+    pixelWidth: 1632,
+    pixelHeight: 1056,
+    maxLegendUnitsFirstPage: 30,
+    maxLegendUnitsExtraPage: 48,
+  },
 };
 
 function formatCoordinatePair(latlng) {
@@ -306,6 +344,376 @@ function createImportedLayer(map, geojson, fileName) {
   return layer;
 }
 
+function normalizeLegendText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function buildLegendGroupsForExport(legends = []) {
+  return legends
+    .map((group) => {
+      const key = group.legendKey || group.key || group.id;
+      const base = getLegendItems(key);
+      const filters = (group.filterTexts || []).map(normalizeLegendText);
+
+      let items = filters.length
+        ? base.filter((item) => filters.includes(normalizeLegendText(item.text)))
+        : base.slice();
+
+      const extra = Array.isArray(group.extras) ? group.extras : [];
+      const merged = new Map();
+      [...items, ...extra].forEach((item) => {
+        if (!item?.text) return;
+        const mergedKey = normalizeLegendText(item.text);
+        if (!merged.has(mergedKey)) merged.set(mergedKey, item);
+      });
+
+      items = Array.from(merged.values());
+      return {
+        key,
+        title: group.title || key,
+        items,
+      };
+    })
+    .filter((group) => group.items.length > 0);
+}
+
+function splitLegendGroups(groups, maxUnits) {
+  const chunks = [];
+  let currentChunk = [];
+  let currentUnits = 0;
+
+  groups.forEach((group) => {
+    const groupUnits = Math.max(2, (group.items?.length || 0) + 1);
+    if (currentChunk.length > 0 && currentUnits + groupUnits > maxUnits) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentUnits = 0;
+    }
+
+    currentChunk.push(group);
+    currentUnits += groupUnits;
+  });
+
+  if (currentChunk.length > 0) chunks.push(currentChunk);
+  return chunks;
+}
+
+async function captureMapImage(mapElement) {
+  if (!mapElement) throw new Error("No fue posible capturar el mapa actual.");
+
+  const canvas = await html2canvas(mapElement, {
+    backgroundColor: "#dde3e8",
+    scale: 2,
+    useCORS: true,
+    imageTimeout: 15000,
+    logging: false,
+    ignoreElements: (element) =>
+      element.classList?.contains("leaflet-control-container") ||
+      element.classList?.contains("leaflet-popup-pane") ||
+      element.classList?.contains("leaflet-tooltip-pane"),
+  });
+
+  return {
+    src: canvas.toDataURL("image/jpeg", 0.92),
+    width: canvas.width,
+    height: canvas.height,
+  };
+}
+
+function buildLegendMarkup(groups = []) {
+  if (!groups.length) {
+    return `
+      <div class="export-empty-state">
+        No hay elementos de simbología visibles en esta vista.
+      </div>
+    `;
+  }
+
+  return groups
+    .map(
+      (group) => `
+        <section class="export-legend-group">
+          <h3>${escapeHtml(group.title)}</h3>
+          <ul>
+            ${group.items
+              .map(
+                (item) => `
+                  <li>
+                    <span class="legend-dot" style="background:${escapeHtml(item.color || "#999")}"></span>
+                    <span>${escapeHtml(item.text)}</span>
+                  </li>
+                `
+              )
+              .join("")}
+          </ul>
+        </section>
+      `
+    )
+    .join("");
+}
+
+function buildExportPagesMarkup({
+  mapImageSrc,
+  mapAspectRatio,
+  logoSrc,
+  paperPreset,
+  generatedAt,
+  centerCoordinates,
+  firstLegendMarkup,
+  extraLegendPagesMarkup,
+}) {
+  return `
+    <style>
+      * { box-sizing: border-box; }
+      .pdf-root {
+        width: ${paperPreset.pixelWidth}px;
+        display: grid;
+        gap: 20px;
+        font-family: "Montserrat", Arial, sans-serif;
+        color: #241f1f;
+      }
+      .pdf-page {
+        width: ${paperPreset.pixelWidth}px;
+        min-height: ${paperPreset.pixelHeight}px;
+        padding: 28px 32px 32px;
+        background: #f4f1ec;
+        display: grid;
+        gap: 22px;
+        align-content: start;
+        position: relative;
+      }
+      .export-header {
+        display: grid;
+        grid-template-columns: 160px 1fr 280px;
+        gap: 22px;
+        align-items: center;
+      }
+      .export-ribbon {
+        min-height: 112px;
+        background: linear-gradient(135deg, #691B32, #8f2746 68%, #b24562);
+        clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%);
+        border-radius: 26px 0 0 26px;
+        color: white;
+        display: grid;
+        align-content: center;
+        padding: 18px 24px;
+        box-shadow: 0 18px 30px rgba(105, 27, 50, 0.22);
+      }
+      .export-ribbon span {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        opacity: .82;
+      }
+      .export-ribbon strong {
+        font-size: 28px;
+        line-height: .95;
+        margin-top: 8px;
+      }
+      .export-title-card {
+        display: grid;
+        gap: 6px;
+        align-content: center;
+        padding: 0;
+      }
+      .export-kicker {
+        font-size: 13px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #7a1d31;
+        font-weight: 700;
+      }
+      .export-meta-inline {
+        margin: 0;
+        font-size: 12.5px;
+        color: #5b5555;
+        line-height: 1.55;
+      }
+      .export-logo-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .export-main {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(250px, 0.82fr);
+        gap: 30px;
+        align-items: start;
+      }
+      .export-map-card,
+      .export-legend-card {
+        background: transparent;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+      }
+      .export-section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 0 0 8px;
+        border-bottom: none;
+      }
+      .export-section-head strong {
+        font-size: 13px;
+        color: #202020;
+        letter-spacing: .02em;
+      }
+      .export-section-head span {
+        font-size: 11px;
+        color: #7a1d31;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+      }
+      .export-map-frame {
+        padding: 8px 0 6px;
+      }
+      .export-map-shell {
+        aspect-ratio: ${mapAspectRatio};
+        border-radius: 30px;
+        overflow: hidden;
+        border: none;
+        background: #dde3e8;
+        box-shadow: 0 22px 40px rgba(0,0,0,0.12);
+      }
+      .export-map-shell img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: contain;
+        background: #dde3e8;
+      }
+      .export-map-meta {
+        display: grid;
+        gap: 8px;
+        padding: 2px 2px 0;
+      }
+      .export-meta-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 11.5px;
+        color: #5d5959;
+      }
+      .export-legend-wrap {
+        padding: 12px 0 0 18px;
+        display: grid;
+        gap: 12px;
+        border-left: 2px solid rgba(105, 27, 50, 0.12);
+      }
+      .export-legend-group {
+        display: grid;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(0,0,0,0.05);
+      }
+      .export-legend-group:first-child {
+        padding-top: 0;
+        border-top: none;
+      }
+      .export-legend-group h3 {
+        margin: 0;
+        font-size: 12px;
+        color: #202020;
+        line-height: 1.25;
+      }
+      .export-legend-group ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 6px;
+      }
+      .export-legend-group li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        color: #2d2d2d;
+      }
+      .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,0.15);
+        flex: 0 0 12px;
+      }
+      .export-empty-state {
+        padding: 8px 0;
+        color: #6f6666;
+        font-size: 11.5px;
+      }
+      .export-legend-page {
+        display: grid;
+        gap: 32px;
+      }
+      .export-legend-columns {
+        columns: 2 220px;
+        column-gap: 32px;
+      }
+      .export-legend-columns .export-legend-group {
+        break-inside: avoid;
+        margin-bottom: 10px;
+      }
+      .export-footer-note {
+        position: absolute;
+        left: 32px;
+        bottom: 18px;
+        max-width: 58%;
+        font-size: 7.5px;
+        line-height: 1.32;
+        color: rgba(58, 52, 52, 0.78);
+      }
+    </style>
+    <div class="pdf-root">
+      <div class="pdf-page">
+        <header class="export-header">
+          <div class="export-ribbon">
+            <span>Mapa</span>
+            <strong>UPLAPH</strong>
+          </div>
+          <div class="export-title-card">
+            <span class="export-kicker">Mapa digital regional y metropolitano</span>
+            <p class="export-meta-inline"><strong>Fecha:</strong> ${escapeHtml(generatedAt)}, <strong>Centro:</strong> ${escapeHtml(centerCoordinates)}</p>
+          </div>
+          <div class="export-logo-wrap">
+            <img src="${escapeHtml(logoSrc)}" alt="Coordinación" style="max-width:100%; max-height:196px; object-fit:contain;" />
+          </div>
+        </header>
+        <main class="export-main">
+          <section class="export-map-card">
+            <div class="export-section-head">
+              <strong>Vista actual</strong>
+            </div>
+            <div class="export-map-frame">
+              <div class="export-map-shell">
+                <img src="${mapImageSrc}" alt="Mapa exportado" />
+              </div>
+            </div>
+          </section>
+          <aside class="export-legend-card">
+            <div class="export-section-head">
+              <strong>Simbología</strong>
+              <span>Referencia</span>
+            </div>
+            <div class="export-legend-wrap">
+              ${firstLegendMarkup}
+            </div>
+          </aside>
+        </main>
+        <div class="export-footer-note">
+          El presente documento cartográfico fue elaborado por la Unidad de Planeación y Prospectiva del Estado de Hidalgo, a través de la Coordinación General de Planeación y Proyectos
+        </div>
+      </div>
+      ${extraLegendPagesMarkup}
+    </div>
+  `;
+}
+
 function boundsFromConfig(bounds) {
   if (!Array.isArray(bounds) || bounds.length !== 2) return null;
   return L.latLngBounds(bounds[0], bounds[1]);
@@ -457,6 +865,12 @@ export default function MapView({
     error: "",
   });
   const [importSanitizeHelpOpen, setImportSanitizeHelpOpen] = useState(false);
+  const [exportPanelState, setExportPanelState] = useState({
+    open: false,
+    loading: false,
+    paperSize: "letter",
+    error: "",
+  });
 
   const visibleDefs = useMemo(
     () => [...selectedLayers].sort((a, b) => getLayerZ(a, zMap) - getLayerZ(b, zMap)),
@@ -640,6 +1054,12 @@ export default function MapView({
   }, []);
 
   const openImportPanel = useCallback(() => {
+    setExportPanelState((current) => ({
+      ...current,
+      open: false,
+      loading: false,
+      error: "",
+    }));
     setImportPanelState((current) => ({ ...current, open: true, error: "" }));
   }, []);
 
@@ -647,6 +1067,25 @@ export default function MapView({
     setImportPanelState((current) => ({ ...current, open: false, loading: false, error: "" }));
     setImportSanitizeHelpOpen(false);
     if (importInputRef.current) importInputRef.current.value = "";
+  }, []);
+
+  const openExportPanel = useCallback(() => {
+    closeImportPanel();
+    setExportPanelState((current) => ({
+      ...current,
+      open: true,
+      loading: false,
+      error: "",
+    }));
+  }, [closeImportPanel]);
+
+  const closeExportPanel = useCallback(() => {
+    setExportPanelState((current) => ({
+      ...current,
+      open: false,
+      loading: false,
+      error: "",
+    }));
   }, []);
 
   const handleImportedFile = useCallback(
@@ -728,6 +1167,149 @@ export default function MapView({
     },
     [closeImportPanel]
   );
+
+  const handleExportPaperChange = useCallback((paperSize) => {
+    setExportPanelState((current) => ({ ...current, paperSize, error: "" }));
+  }, []);
+
+  const handleExportPdf = useCallback(async () => {
+    const mapElement = mapDivRef.current;
+    const map = mapRef.current;
+    const paperPreset = EXPORT_PAGE_PRESETS[exportPanelState.paperSize] || EXPORT_PAGE_PRESETS.letter;
+
+    if (!mapElement || !map) {
+      setExportPanelState((current) => ({
+        ...current,
+        open: true,
+        loading: false,
+        error: "No fue posible preparar el mapa para exportación.",
+      }));
+      return;
+    }
+
+    setExportPanelState((current) => ({ ...current, loading: true, error: "" }));
+
+    try {
+      const legendGroups = buildLegendGroupsForExport(legends);
+      const firstLegendChunks = splitLegendGroups(legendGroups, paperPreset.maxLegendUnitsFirstPage);
+      const firstLegendGroups = firstLegendChunks[0] || [];
+      const remainingLegendGroups = legendGroups.slice(firstLegendGroups.length);
+      const extraLegendChunks = splitLegendGroups(remainingLegendGroups, paperPreset.maxLegendUnitsExtraPage);
+
+      const center = map.getCenter?.();
+      const centerCoordinates = formatCoordinatePair(center || null);
+      const generatedAt = new Intl.DateTimeFormat("es-MX", {
+        dateStyle: "long",
+        timeStyle: "short",
+      }).format(new Date());
+      const logoSrc = `${window.location.origin}/img/logos/Coordinaci%C3%B3n.png`;
+      const firstLegendMarkup = buildLegendMarkup(firstLegendGroups);
+      const extraLegendPagesMarkup = extraLegendChunks
+        .map(
+          (groups, index) => `
+            <div class="pdf-page export-legend-page">
+              <header class="export-header">
+                <div class="export-ribbon">
+                  <span>Mapa</span>
+                  <strong>UPLAPH</strong>
+                </div>
+                <div class="export-title-card">
+                  <span class="export-kicker">Mapa digital regional y metropolitano</span>
+                  <p class="export-meta-inline"><strong>Fecha:</strong> ${escapeHtml(generatedAt)}, <strong>Centro:</strong> ${escapeHtml(centerCoordinates)}</p>
+                </div>
+                <div class="export-logo-wrap">
+                  <img src="${escapeHtml(logoSrc)}" alt="Coordinación" style="max-width:100%; max-height:196px; object-fit:contain;" />
+                </div>
+              </header>
+              <section class="export-legend-card">
+                <div class="export-section-head">
+                  <strong>Simbología</strong>
+                  <span>Hoja ${index + 2}</span>
+                </div>
+                <div class="export-legend-wrap export-legend-columns">
+                  ${buildLegendMarkup(groups)}
+                </div>
+              </section>
+              <div class="export-footer-note">
+                El presente documento cartográfico fue elaborado por la Unidad de Planeación y Prospectiva del Estado de Hidalgo, a través de la Coordinación General de Planeación y Proyectos
+              </div>
+            </div>
+          `
+        )
+        .join("");
+      const capturedMap = await captureMapImage(mapElement);
+      const mapAspectRatio =
+        capturedMap.width > 0 && capturedMap.height > 0
+          ? `${capturedMap.width} / ${capturedMap.height}`
+          : "16 / 9";
+      const exportRoot = document.createElement("div");
+      exportRoot.dataset.exportRoot = "true";
+      exportRoot.style.position = "fixed";
+      exportRoot.style.left = "-20000px";
+      exportRoot.style.top = "0";
+      exportRoot.style.width = `${paperPreset.pixelWidth}px`;
+      exportRoot.style.zIndex = "-1";
+      exportRoot.style.pointerEvents = "none";
+      exportRoot.innerHTML = buildExportPagesMarkup({
+        mapImageSrc: capturedMap.src,
+        mapAspectRatio,
+        logoSrc,
+        paperPreset,
+        generatedAt,
+        centerCoordinates,
+        firstLegendMarkup,
+        extraLegendPagesMarkup,
+      });
+
+      document.body.appendChild(exportRoot);
+
+      const pageNodes = Array.from(exportRoot.querySelectorAll(".pdf-page"));
+      if (pageNodes.length === 0) {
+        throw new Error("No fue posible preparar el contenido del PDF.");
+      }
+
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: [paperPreset.pdfWidthMm, paperPreset.pdfHeightMm],
+        compress: true,
+      });
+
+      for (let index = 0; index < pageNodes.length; index += 1) {
+        const pageNode = pageNodes[index];
+        const canvas = await html2canvas(pageNode, {
+          backgroundColor: "#f4f1ec",
+          scale: 2,
+          useCORS: true,
+          imageTimeout: 15000,
+          logging: false,
+        });
+
+        const imageData = canvas.toDataURL("image/jpeg", 0.92);
+        if (index > 0) pdf.addPage([paperPreset.pdfWidthMm, paperPreset.pdfHeightMm], "landscape");
+        pdf.addImage(imageData, "JPEG", 0, 0, paperPreset.pdfWidthMm, paperPreset.pdfHeightMm, undefined, "FAST");
+      }
+
+      document.body.removeChild(exportRoot);
+      pdf.save(`mapa-${exportPanelState.paperSize}-${new Date().toISOString().slice(0, 10)}.pdf`);
+      closeExportPanel();
+    } catch (error) {
+      console.error("Export PDF failed", error);
+      document.querySelectorAll('[data-export-root="true"]').forEach((node) => node.remove());
+      setExportPanelState((current) => ({
+        ...current,
+        open: true,
+        loading: false,
+        error:
+          error?.message?.includes("tainted")
+            ? "No se pudo generar el PDF con la base cartográfica actual. Intenta con una base compatible con exportación."
+            : error?.message || "No se pudo generar la vista para PDF.",
+      }));
+      return;
+    }
+
+    setExportPanelState((current) => ({ ...current, loading: false }));
+  }, [closeExportPanel, exportPanelState.paperSize, legends, visibleDefs]);
 
   const updateCursor = useCallback(
     (cursor) => {
@@ -1086,8 +1668,63 @@ export default function MapView({
       },
     });
 
+    const ExportControl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd() {
+        const wrapper = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+        wrapper.style.marginTop = "10px";
+        wrapper.style.border = "none";
+        wrapper.style.background = "transparent";
+
+        const button = L.DomUtil.create("button", "", wrapper);
+        button.type = "button";
+        button.title = "Descargar mapa en PDF";
+        button.setAttribute("aria-label", "Descargar mapa en PDF");
+        button.style.width = "34px";
+        button.style.height = "34px";
+        button.style.display = "inline-flex";
+        button.style.alignItems = "center";
+        button.style.justifyContent = "center";
+        button.style.border = "1px solid rgba(0,0,0,0.12)";
+        button.style.borderRadius = "10px";
+        button.style.background = "rgba(255,255,255,0.95)";
+        button.style.backdropFilter = "blur(10px)";
+        button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+        button.style.cursor = "pointer";
+        button.style.transition = "transform 120ms ease, box-shadow 120ms ease, background 120ms ease";
+        button.style.color = "#7a1d31";
+        button.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8.6 10.4L12 13.8l3.4-3.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 17.5h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <rect x="4.5" y="16.5" width="15" height="3" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          </svg>
+        `;
+
+        L.DomEvent.disableClickPropagation(wrapper);
+        L.DomEvent.disableScrollPropagation(wrapper);
+        L.DomEvent.on(button, "click", (event) => {
+          L.DomEvent.preventDefault(event);
+          L.DomEvent.stopPropagation(event);
+          openExportPanel();
+        });
+        L.DomEvent.on(button, "mouseenter", () => {
+          button.style.boxShadow = "0 14px 28px rgba(0,0,0,0.18)";
+          button.style.transform = "translateY(-1px)";
+        });
+        L.DomEvent.on(button, "mouseleave", () => {
+          button.style.boxShadow = "0 10px 20px rgba(0,0,0,0.14)";
+          button.style.transform = "translateY(0)";
+        });
+
+        return wrapper;
+      },
+    });
+
     new LocateControl().addTo(map);
     new ImportControl().addTo(map);
+    new ExportControl().addTo(map);
 
     mapRef.current = map;
 
@@ -1115,7 +1752,7 @@ export default function MapView({
         importedOverlayRef.current = null;
       }
     };
-  }, [openImportPanel]);
+  }, [openExportPanel, openImportPanel]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1406,6 +2043,7 @@ export default function MapView({
       onClick={() => {
         if (contextMenuState) closeContextMenu();
         if (importPanelState.open) closeImportPanel();
+        if (exportPanelState.open) closeExportPanel();
       }}
     >
       <input
@@ -1636,6 +2274,164 @@ export default function MapView({
             <button
               type="button"
               onClick={closeImportPanel}
+              style={{
+                padding: "11px 12px",
+                borderRadius: 14,
+                border: "1px solid rgba(0,0,0,0.08)",
+                background: "rgba(255,255,255,0.8)",
+                color: "#505050",
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {exportPanelState.open ? (
+        <div
+          onClick={(event) => event.stopPropagation()}
+          style={{
+            position: "absolute",
+            top: importPanelState.open ? 344 : 108,
+            left: 54,
+            zIndex: 20007,
+            width: 318,
+            padding: 14,
+            borderRadius: 18,
+            background: "rgba(255,255,255,0.96)",
+            border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 18px 38px rgba(0,0,0,0.18)",
+            backdropFilter: "blur(14px)",
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ display: "grid", gap: 3 }}>
+              <strong style={{ fontSize: 13, color: "#202020" }}>Descargar mapa</strong>
+              <span style={{ fontSize: 11.5, color: "#666" }}>Incluye mapa visible y simbología en PDF</span>
+            </div>
+            <button
+              type="button"
+              aria-label="Cerrar"
+              onClick={closeExportPanel}
+              style={{
+                width: 28,
+                height: 28,
+                border: "none",
+                borderRadius: 999,
+                background: "rgba(0,0,0,0.05)",
+                color: "#7d7d7d",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gap: 8 }}>
+            <span style={{ fontSize: 11, color: "#7a1d31", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>
+              Tamaño de salida
+            </span>
+            <div style={{ display: "grid", gap: 8 }}>
+              {Object.entries(EXPORT_PAGE_PRESETS).map(([key, preset]) => {
+                const selected = exportPanelState.paperSize === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleExportPaperChange(key)}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      padding: "10px 12px",
+                      borderRadius: 14,
+                      border: selected ? "1px solid rgba(122,29,49,0.28)" : "1px solid rgba(0,0,0,0.08)",
+                      background: selected
+                        ? "linear-gradient(135deg, rgba(122,29,49,0.08), rgba(188,149,91,0.18))"
+                        : "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,245,240,0.95))",
+                      color: "#2a2a2a",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ display: "grid", gap: 2 }}>
+                      <strong style={{ fontSize: 12.5 }}>{preset.label}</strong>
+                      <span style={{ fontSize: 11.5, color: "#666" }}>Horizontal, listo para guardar como PDF</span>
+                    </span>
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 999,
+                        border: selected ? "5px solid #7a1d31" : "2px solid rgba(122,29,49,0.24)",
+                        background: selected ? "#f7f1ea" : "transparent",
+                        flex: "0 0 18px",
+                      }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+            <div style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 11.5, color: "#666", lineHeight: 1.45 }}>
+                Si la simbología no cabe en la primera hoja, se agrega una segunda.
+              </span>
+            {exportPanelState.error ? (
+              <span
+                style={{
+                  fontSize: 11.5,
+                  color: "#9f2241",
+                  background: "rgba(159,34,65,0.08)",
+                  border: "1px solid rgba(159,34,65,0.12)",
+                  padding: "8px 10px",
+                  borderRadius: 12,
+                }}
+              >
+                {exportPanelState.error}
+              </span>
+            ) : null}
+          </div>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="button"
+              disabled={exportPanelState.loading}
+              onClick={handleExportPdf}
+              style={{
+                flex: 1,
+                padding: "11px 12px",
+                borderRadius: 14,
+                border: "1px solid rgba(122,29,49,0.14)",
+                background: exportPanelState.loading
+                  ? "rgba(0,0,0,0.05)"
+                  : "linear-gradient(135deg, rgba(122,29,49,0.08), rgba(188,149,91,0.18))",
+                color: "#7a1d31",
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: exportPanelState.loading ? "wait" : "pointer",
+                boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
+              }}
+            >
+              {exportPanelState.loading ? "Preparando..." : "Descargar PDF"}
+            </button>
+            <button
+              type="button"
+              onClick={closeExportPanel}
               style={{
                 padding: "11px 12px",
                 borderRadius: 14,
