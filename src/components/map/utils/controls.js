@@ -59,6 +59,104 @@ function createActionControl({ title, ariaLabel, iconMarkup, onClick }) {
   });
 }
 
+function createFullscreenControl({ map }) {
+  return L.Control.extend({
+    options: { position: "topleft" },
+    onAdd() {
+      const wrapper = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+      wrapper.style.marginTop = "10px";
+      wrapper.style.border = "none";
+      wrapper.style.background = "transparent";
+
+      const button = L.DomUtil.create("button", "", wrapper);
+      button.type = "button";
+      button.title = "Pantalla completa";
+      button.setAttribute("aria-label", "Pantalla completa");
+      styleActionButton(button);
+      button.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      `;
+
+      const getFullscreenTarget = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+      const updateVisualState = () => {
+        const isFullscreen = !!getFullscreenTarget();
+        button.style.background = isFullscreen
+          ? "linear-gradient(135deg, #bc955b, #DEC9A3)"
+          : "rgba(255,255,255,0.95)";
+        button.style.color = isFullscreen ? "#691b32" : "#7a1d31";
+        button.title = isFullscreen ? "Salir de pantalla completa" : "Pantalla completa";
+        button.setAttribute("aria-label", button.title);
+      };
+
+      const requestFullscreen = async () => {
+        const target = document.documentElement;
+        if (target.requestFullscreen) return target.requestFullscreen();
+        if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen();
+      };
+
+      const exitFullscreen = async () => {
+        if (document.exitFullscreen) return document.exitFullscreen();
+        if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+      };
+
+      const handleToggle = async () => {
+        try {
+          if (getFullscreenTarget()) {
+            await exitFullscreen();
+          } else {
+            await requestFullscreen();
+          }
+        } catch (error) {
+          console.warn("No se pudo cambiar a pantalla completa", error);
+        } finally {
+          window.setTimeout(() => {
+            updateVisualState();
+            map.invalidateSize?.({ animate: false });
+          }, 180);
+        }
+      };
+
+      const handleFullscreenChange = () => {
+        updateVisualState();
+        window.setTimeout(() => {
+          map.invalidateSize?.({ animate: false });
+        }, 180);
+      };
+
+      updateVisualState();
+
+      L.DomEvent.disableClickPropagation(wrapper);
+      L.DomEvent.disableScrollPropagation(wrapper);
+      L.DomEvent.on(button, "click", (event) => {
+        L.DomEvent.preventDefault(event);
+        L.DomEvent.stopPropagation(event);
+        handleToggle();
+      });
+      bindHoverLift(button);
+
+      document.addEventListener("fullscreenchange", handleFullscreenChange);
+      document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+
+      wrapper._codexCleanup = () => {
+        document.removeEventListener("fullscreenchange", handleFullscreenChange);
+        document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      };
+
+      return wrapper;
+    },
+  });
+}
+
 function createLocateControl({ map, locationOverlayRef }) {
   return L.Control.extend({
     options: { position: "topleft" },
@@ -277,15 +375,20 @@ export function addMapControls({
       </svg>
     `,
   });
+  const FullscreenControl = createFullscreenControl({ map });
 
   const controls = [
     new LocateControl().addTo(map),
     new ImportControl().addTo(map),
     new ExportControl().addTo(map),
     new DrawingControl().addTo(map),
+    new FullscreenControl().addTo(map),
   ];
 
   return () => {
-    controls.forEach((control) => map.removeControl(control));
+    controls.forEach((control) => {
+      control.getContainer?.()?._codexCleanup?.();
+      map.removeControl(control);
+    });
   };
 }
