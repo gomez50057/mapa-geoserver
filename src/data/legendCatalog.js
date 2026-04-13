@@ -1,4 +1,5 @@
 import { getLegendStyle, SYMBOLOGY } from "./simbologia";
+import { resolveLayerPaintOverride } from "./layerSchema";
 
 export const LEGEND_CATALOG = SYMBOLOGY;
 
@@ -28,45 +29,8 @@ export function getLayerPaint(layerDef) {
     };
   }
 
-  if (layerDef.id === "hgo_info_gen") {
-    return {
-      stroke: "#ffffff",
-      fill: "rgba(0, 0, 0, 0.4)",
-      weight: 2.6,
-      fillOpacity: 0.6,
-      dashArray: null,
-      pointRadius: 6,
-    };
-  }
-
-  if (layerDef.id === "esc_priv_ms") {
-    return {
-      stroke: "#7C3AED",
-      fill: "#7C3AED",
-      weight: 1.5,
-      fillOpacity: 0.85,
-      dashArray: null,
-      pointRadius: 6,
-    };
-  }
-
-  if (["zmvm_info", "zmpachuca_info", "zmtula_info", "zmtulancingo_info"].includes(layerDef.id)) {
-    const fillById = {
-      zmvm_info: "#BC955B",
-      zmpachuca_info: "#B6DC76",
-      zmtula_info: "Aqua",
-      zmtulancingo_info: "#241E4E",
-    };
-
-    return {
-      stroke: "transparent",
-      fill: fillById[layerDef.id] || "#3388ff",
-      weight: layerDef.id === "zmvm_info" ? 2.6 : 2,
-      fillOpacity: layerDef.id === "zmvm_info" ? 0.45 : 0.7,
-      dashArray: null,
-      pointRadius: 6,
-    };
-  }
+  const schemaOverride = resolveLayerPaintOverride(layerDef);
+  if (schemaOverride) return schemaOverride;
 
   const legendStyle = getLegendStyle(layerDef.legendKey, layerDef.legendItem) || {};
   const asLine = !!layerDef?.meta?.asLine;

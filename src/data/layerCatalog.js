@@ -1,10 +1,5 @@
 import { GEOSERVER_CONFIG } from "@/config/geoserver";
-import {
-  buildLayerBehavior,
-  buildLayerName,
-  guessGeometryType,
-  guessStyleRef,
-} from "./layerBehaviors";
+import { buildLayerSchema } from "./layerSchema";
 
 function buildWorkspace(layer) {
   if (layer.workspace) return layer.workspace;
@@ -12,28 +7,27 @@ function buildWorkspace(layer) {
 }
 
 function decorateLayer(layer, groupPath) {
-  const behavior = buildLayerBehavior(layer, groupPath);
-  const sourceType = behavior.sourceType;
+  const schema = buildLayerSchema(layer, groupPath);
   return {
     ...layer,
-    behavior,
-    sourceType,
-    renderMode: behavior.renderMode,
+    behavior: schema.behavior,
+    sourceType: schema.sourceType,
+    renderMode: schema.renderMode,
     workspace: buildWorkspace(layer),
-    layerName: buildLayerName(layer),
+    layerName: schema.layerName,
     title: layer.title || layer.name,
     groupPath,
-    popupSchema: behavior.popupSchema,
-    queryMode: behavior.queryMode,
-    hoverMode: behavior.hoverMode,
-    clickFallbackMode: behavior.clickFallbackMode,
-    boundsMode: behavior.boundsMode,
-    fitOnEnable: behavior.fitOnEnable,
+    popupSchema: schema.popupSchema,
+    queryMode: schema.queryMode,
+    hoverMode: schema.hoverMode,
+    clickFallbackMode: schema.clickFallbackMode,
+    boundsMode: schema.boundsMode,
+    fitOnEnable: schema.fitOnEnable,
     bounds: layer.bounds || null,
-    styleRef: guessStyleRef(layer),
-    geometryType: guessGeometryType(layer),
-    legacyGeojsonId: layer.geojsonId || null,
-    migrationStatus: sourceType === "local" ? "pendiente" : "conectada",
+    styleRef: schema.styleRef,
+    geometryType: schema.geometryType,
+    legacyGeojsonId: schema.legacyGeojsonId,
+    migrationStatus: schema.migrationStatus,
   };
 }
 
