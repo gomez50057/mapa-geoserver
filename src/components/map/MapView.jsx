@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import LegendDock from "./LegendDock";
@@ -58,6 +58,7 @@ export default function MapView({
   const locationOverlayRef = useRef(null);
   const importedOverlayRef = useRef(null);
   const importInputRef = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const queryableDefs = useMemo(
     () =>
@@ -106,6 +107,7 @@ export default function MapView({
 
   const { visibleDefs, mosaicStatus, cleanupLayersRuntime } = useMapLayersRuntime({
     mapRef,
+    mapReady,
     selectedLayers,
     zMap,
     layerOpacityMap,
@@ -246,6 +248,7 @@ export default function MapView({
     });
 
     mapRef.current = map;
+    setMapReady(true);
 
     return () => {
       cleanupControls();
@@ -253,6 +256,7 @@ export default function MapView({
       cleanupLayersRuntime();
       map.remove();
       mapRef.current = null;
+      setMapReady(false);
       paneRef.current = {};
       if (locationOverlayRef.current) {
         locationOverlayRef.current.remove();

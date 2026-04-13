@@ -112,6 +112,7 @@ async function waitForLayerReady(layer) {
 
 export function useMapLayersRuntime({
   mapRef,
+  mapReady,
   selectedLayers,
   zMap,
   layerOpacityMap,
@@ -267,7 +268,7 @@ export function useMapLayersRuntime({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return undefined;
+    if (!map || !mapReady) return undefined;
 
     let cancelled = false;
     const token = ++loadTokenRef.current;
@@ -375,7 +376,16 @@ export function useMapLayersRuntime({
     return () => {
       cancelled = true;
     };
-  }, [bindTileLayerProgress, layerOpacityMap, mapRef, onLayerStatusChange, syncMosaicStatus, visibleDefs, zMap]);
+  }, [
+    bindTileLayerProgress,
+    layerOpacityMap,
+    mapReady,
+    mapRef,
+    onLayerStatusChange,
+    syncMosaicStatus,
+    visibleDefs,
+    zMap,
+  ]);
 
   const cleanupLayersRuntime = useCallback(() => {
     groupRef.current = {};
