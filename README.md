@@ -31,7 +31,8 @@ GEOSERVER_REMOTE_WFS_URL=https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs
 - Compatibilidad temporal con capas legacy vía carga diferida.
 
 ## Archivos clave
-- `src/data/layersTree.js`: árbol visible + catálogo híbrido generado.
+- `src/data/layersTree.js`: fachada estable del árbol visible + catálogo híbrido generado.
+- `src/data/layersTree/`: bloques del árbol por dominio (`Hidalgo`, `Instrumentos`, `Zonas metropolitanas`).
 - `src/data/layerSchema.js`: fuente declarativa para nombre técnico, popup, comportamiento y overrides por capa.
 - `src/data/layerBehaviors.js`: fachada estable del comportamiento declarativo por capa.
 - `src/data/layerMigrationTable.js`: tabla maestra `layer id -> workspace -> layerName -> style -> popup schema -> estado`.
@@ -53,20 +54,28 @@ GEOSERVER_REMOTE_WFS_URL=https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs
 La integración nueva está pensada para tocar lo mínimo y de forma declarativa. En la mayoría de los casos basta con árbol + esquema.
 
 1. Publica la capa en GeoServer y confirma `workspace:layerName`, estilo y tipo de geometría.
-2. Agrega la capa al árbol en `src/data/layersTree.js` con su `id`, nombre visible, grupo, `legendKey` y metadata UX.
+2. Agrega la capa en el módulo del árbol que corresponda dentro de `src/data/layersTree/`:
+   - `hidalgoTree.js`
+   - `instrumentosTree.js`
+   - `zonasMetropolitanasTree.js`
+3. Define `id`, nombre visible, grupo, `legendKey`, `defaultVisible`, `defaultZ` y metadata UX dentro de ese bloque.
 3. Si la capa necesita un nombre técnico distinto al `id`, un `popupSchema` especial, un comportamiento diferente o un override visual, decláralo en `src/data/layerSchema.js`.
 4. Si el popup no encaja con los ya existentes, crea o ajusta el esquema en `src/data/popupSchemas/` y asígnalo desde `layerSchema.js`.
 5. Solo si la capa requiere un render especial que no puede resolverse con WMS + popup declarativo, agrega un builder específico en `src/data/customLayers/`.
 
 ### Flujo recomendado
-- `layersTree.js`: define dónde aparece la capa y cómo la ve el usuario.
+- `layersTree/`: define dónde aparece la capa y en qué dominio vive.
+- `layersTree.js`: ensambla el árbol completo sin que tengas que tocar imports en el resto de la app.
 - `layerSchema.js`: define cómo se conecta y cómo se comporta.
 - `popupSchemas/`: define qué información muestra.
 - `customLayers/`: úsalo únicamente para casos especiales.
 
 ### Regla práctica
-- Capa estándar: toca `layersTree.js` y, si hace falta, `layerSchema.js`.
+- Capa estándar: toca el módulo correcto dentro de `layersTree/` y, si hace falta, `layerSchema.js`.
 - Capa con popup especial: añade `popupSchemas/`.
 - Capa con lógica visual excepcional: añade `customLayers/`.
 
-La meta es que una capa nueva no obligue a repartir reglas entre varios archivos sin control: primero árbol, luego esquema, y solo después extensiones puntuales.
+### Ejemplo de mantenimiento sano
+- Capa de Hidalgo: agrégala en `src/data/layersTree/hidalgoTree.js`.
+- Capa PMDU o instrumento: agrégala en `src/data/layersTree/instrumentosTree.js`.
+- Capa metropolitana: agrégala en `src/data/layersTree/zonasMetropolitanasTree.js`.

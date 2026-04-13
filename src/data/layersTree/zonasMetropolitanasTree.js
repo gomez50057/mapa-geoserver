@@ -1,0 +1,57 @@
+export const ZONAS_METROPOLITANAS_TREE =   {
+    id: "cat_zonas_metropolitanas",
+    name: "Zonas metropolitanas",
+    children: [
+      {
+        id: "sub_info_basica",
+        name: "Información básica",
+        layers: [
+          {
+            id: "zmvm_info",
+            name: "ZMVM",
+            type: "vector",
+            geojsonId: "ZMVM_INFO",
+            hasLegend: false,
+            legendKey: "zmvm_info",
+            legendTitle: "ZMVM — Información básica",
+            defaultVisible: false,
+            defaultZ: 520,
+          },
+          {
+            id: "zmpachuca_info",
+            name: "ZMPachuca",
+            type: "vector",
+            geojsonId: "ZMPACHUCA_INFO",
+            hasLegend: false,
+            legendKey: "zmpachuca_info",
+            legendTitle: "ZMPachuca — Información básica",
+            defaultVisible: false,
+            defaultZ: 521,
+          },
+          {
+            id: "zmtula_info",
+            name: "ZMTula",
+            type: "vector",
+            geojsonId: "ZMTULA_INFO",
+            hasLegend: false,
+            legendKey: "zmtula_info",
+            legendTitle: "ZMTula — Información básica",
+            defaultVisible: false,
+            defaultZ: 522,
+          },
+          {
+            id: "zmtulancingo_info",
+            name: "ZMTulancingo",
+            type: "vector",
+            geojsonId: "ZMTULANCINGO_INFO",
+            hasLegend: false,
+            legendKey: "zmtulancingo_info",
+            legendTitle: "ZMTulancingo — Información básica",
+            defaultVisible: false,
+            defaultZ: 523,
+          },
+        ],
+      },
+    ],
+  };
+
