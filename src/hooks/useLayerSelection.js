@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildLayerIndex, flattenLayers } from "@/data/layerCatalog";
 
 export function useLayerSelection(tree) {
@@ -12,6 +12,43 @@ export function useLayerSelection(tree) {
   const [opacityOverrides, setOpacityOverrides] = useState(() => new Map());
   const legendSeq = useRef(0);
   const [legendByKey, setLegendByKey] = useState(() => new Map());
+
+  const buildDefaultSelectionState = useCallback(() => {
+    const defaults = allLayers.filter((layer) => layer.defaultVisible);
+    const defaultIds = new Set(defaults.map((layer) => layer.id));
+    const initialLegends = new Map();
+    let sequence = 0;
+
+    defaults.forEach((layer) => {
+      if (!layer.hasLegend || !layer.legendKey) return;
+
+      const current = initialLegends.get(layer.legendKey);
+      if (current) {
+        current.count += 1;
+        if (layer.legendItem) current.items.add(layer.legendItem);
+        if (layer.legendExtra?.color && layer.legendExtra?.text) {
+          current.extras.push({ ...layer.legendExtra });
+        }
+      } else {
+        initialLegends.set(layer.legendKey, {
+          title: layer.legendTitle ?? layer.name ?? layer.legendKey,
+          count: 1,
+          seq: ++sequence,
+          items: new Set(layer.legendItem ? [layer.legendItem] : []),
+          extras:
+            layer.legendExtra?.color && layer.legendExtra?.text
+              ? [{ ...layer.legendExtra }]
+              : [],
+        });
+      }
+    });
+
+    return {
+      defaultIds,
+      initialLegends,
+      sequence,
+    };
+  }, [allLayers]);
 
   const addLegend = (layer) => {
     if (!layer?.hasLegend || !layer.legendKey) return;
@@ -63,40 +100,11 @@ export function useLayerSelection(tree) {
   };
 
   useEffect(() => {
-    const defaults = allLayers.filter((layer) => layer.defaultVisible);
-    const defaultIds = new Set(defaults.map((layer) => layer.id));
+    const { defaultIds, initialLegends, sequence } = buildDefaultSelectionState();
     setSelectedIds(defaultIds);
-
-    const initialLegends = new Map();
-    let sequence = 0;
-
-    defaults.forEach((layer) => {
-      if (!layer.hasLegend || !layer.legendKey) return;
-
-      const current = initialLegends.get(layer.legendKey);
-      if (current) {
-        current.count += 1;
-        if (layer.legendItem) current.items.add(layer.legendItem);
-        if (layer.legendExtra?.color && layer.legendExtra?.text) {
-          current.extras.push({ ...layer.legendExtra });
-        }
-      } else {
-        initialLegends.set(layer.legendKey, {
-          title: layer.legendTitle ?? layer.name ?? layer.legendKey,
-          count: 1,
-          seq: ++sequence,
-          items: new Set(layer.legendItem ? [layer.legendItem] : []),
-          extras:
-            layer.legendExtra?.color && layer.legendExtra?.text
-              ? [{ ...layer.legendExtra }]
-              : [],
-        });
-      }
-    });
-
     legendSeq.current = sequence;
     setLegendByKey(initialLegends);
-  }, [allLayers]);
+  }, [buildDefaultSelectionState]);
 
   const onToggleLayer = (layer) => {
     setSelectedIds((previous) => {
@@ -244,6 +252,15 @@ export function useLayerSelection(tree) {
     });
   };
 
+  const resetToDefaults = useCallback(() => {
+    const { defaultIds, initialLegends, sequence } = buildDefaultSelectionState();
+    setSelectedIds(defaultIds);
+    setZOverrides(new Map());
+    setOpacityOverrides(new Map());
+    legendSeq.current = sequence;
+    setLegendByKey(initialLegends);
+  }, [buildDefaultSelectionState]);
+
   const selectedLayers = useMemo(
     () => [...selectedIds].map((id) => layerIndex[id]).filter(Boolean),
     [layerIndex, selectedIds]
@@ -294,5 +311,6 @@ export function useLayerSelection(tree) {
     opacityMap,
     setLayerOpacity,
     setManyLayerOpacity,
+    resetToDefaults,
   };
 }

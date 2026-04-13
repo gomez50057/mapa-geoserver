@@ -338,6 +338,7 @@ export function addMapControls({
   onOpenImportPanel,
   onOpenExportPanel,
   onOpenDrawingPanel,
+  onResetMapState,
 }) {
   const LocateControl = createLocateControl({ map, locationOverlayRef });
   const ImportControl = createActionControl({
@@ -376,6 +377,30 @@ export function addMapControls({
     `,
   });
   const FullscreenControl = createFullscreenControl({ map });
+  const ResetControl = createActionControl({
+    title: "Restablecer vista inicial",
+    ariaLabel: "Restablecer vista inicial",
+    onClick: onResetMapState,
+    iconMarkup: `
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+        <path
+          d="M4.5 5.8v4.4h4.4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    `,
+  });
 
   const controls = [
     new LocateControl().addTo(map),
@@ -383,6 +408,7 @@ export function addMapControls({
     new ExportControl().addTo(map),
     new DrawingControl().addTo(map),
     new FullscreenControl().addTo(map),
+    new ResetControl().addTo(map),
   ];
 
   return () => {

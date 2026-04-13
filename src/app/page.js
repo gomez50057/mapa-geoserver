@@ -23,6 +23,7 @@ export default function Home() {
     opacityMap,
     setLayerOpacity,
     setManyLayerOpacity,
+    resetToDefaults,
   } = useLayerSelection(LAYERS_TREE);
 
   const [layerLoadState, setLayerLoadState] = useState({});
@@ -101,6 +102,7 @@ export default function Home() {
         onLayerStatusChange={onLayerStatusChange}
         onLayerOpacityChange={setLayerOpacity}
         onManyLayerOpacityChange={setManyLayerOpacity}
+        onResetLayers={resetToDefaults}
       />
     </div>
   );

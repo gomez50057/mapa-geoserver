@@ -51,6 +51,7 @@ export default function MapView({
   onLayerStatusChange = () => {},
   onLayerOpacityChange = () => {},
   onManyLayerOpacityChange = () => {},
+  onResetLayers = () => {},
 }) {
   const mapDivRef = useRef(null);
   const mapRef = useRef(null);
@@ -172,6 +173,16 @@ export default function MapView({
     openDrawingPanelBase();
   }, [closeExportPanel, closeImportPanel, openDrawingPanelBase]);
 
+  const handleResetMapState = useCallback(() => {
+    onResetLayers();
+    const map = mapRef.current;
+    if (!map) return;
+    map.fitBounds(FALLBACK_BOUNDS, {
+      padding: [20, 20],
+      animate: true,
+    });
+  }, [onResetLayers]);
+
   useEffect(() => {
     if (mapRef.current) return undefined;
 
@@ -245,6 +256,7 @@ export default function MapView({
       onOpenImportPanel: openImportPanel,
       onOpenExportPanel: openExportPanel,
       onOpenDrawingPanel: openDrawingPanel,
+      onResetMapState: handleResetMapState,
     });
 
     mapRef.current = map;
@@ -279,7 +291,7 @@ export default function MapView({
         drawingEditHandlesRef.current = null;
       }
     };
-  }, [cleanupInteractions, cleanupLayersRuntime, openDrawingPanel, openExportPanel, openImportPanel]);
+  }, [cleanupInteractions, cleanupLayersRuntime, handleResetMapState, openDrawingPanel, openExportPanel, openImportPanel]);
 
   return (
     <div
