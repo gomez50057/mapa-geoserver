@@ -32,12 +32,15 @@ GEOSERVER_REMOTE_WFS_URL=https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs
 
 ## Archivos clave
 - `src/data/layersTree.js`: árbol visible + catálogo híbrido generado.
-- `src/data/layerBehaviors.js`: contrato declarativo de comportamiento por capa.
+- `src/data/layerSchema.js`: fuente declarativa para nombre técnico, popup, comportamiento y overrides por capa.
+- `src/data/layerBehaviors.js`: fachada estable del comportamiento declarativo por capa.
 - `src/data/layerMigrationTable.js`: tabla maestra `layer id -> workspace -> layerName -> style -> popup schema -> estado`.
 - `src/lib/geoserver/client.js`: cliente WMS/WFS/GetFeatureInfo.
 - `src/lib/geoserver/interaction.js`: resolución de clic/hover sobre capas.
 - `src/lib/geoserver/runtime.js`: bounds y utilidades de runtime del mapa.
-- `src/data/popupSchemas.js`: render declarativo de popups.
+- `src/data/popupSchemas.js`: fachada estable del render declarativo de popups.
+- `src/data/popupSchemas/`: esquemas de popup por dominio.
+- `src/data/customLayers/`: builders especiales por familia de capa.
 - `src/hooks/useLayerSelection.js`: estado de selección, leyendas y z-order.
 
 ## Arquitectura recomendada
@@ -47,8 +50,23 @@ GEOSERVER_REMOTE_WFS_URL=https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs
 - GeoServer como fuente de estilo y publicación; frontend como orquestador de UX.
 
 ## Cómo agregar una capa nueva
-1. Publica la capa en GeoServer y confirma `workspace:layerName`.
-2. Agrega la capa al árbol en `src/data/layersTree.js`.
-3. Si el nombre técnico no coincide con el `id`, declara el override en `src/data/layerBehaviors.js`.
-4. Si requiere popup especial, asigna o crea `popupSchema`.
-5. Si requiere comportamiento distinto de clic/hover/bounds, ajusta solo `layerBehaviors.js`.
+La integración nueva está pensada para tocar lo mínimo y de forma declarativa. En la mayoría de los casos basta con árbol + esquema.
+
+1. Publica la capa en GeoServer y confirma `workspace:layerName`, estilo y tipo de geometría.
+2. Agrega la capa al árbol en `src/data/layersTree.js` con su `id`, nombre visible, grupo, `legendKey` y metadata UX.
+3. Si la capa necesita un nombre técnico distinto al `id`, un `popupSchema` especial, un comportamiento diferente o un override visual, decláralo en `src/data/layerSchema.js`.
+4. Si el popup no encaja con los ya existentes, crea o ajusta el esquema en `src/data/popupSchemas/` y asígnalo desde `layerSchema.js`.
+5. Solo si la capa requiere un render especial que no puede resolverse con WMS + popup declarativo, agrega un builder específico en `src/data/customLayers/`.
+
+### Flujo recomendado
+- `layersTree.js`: define dónde aparece la capa y cómo la ve el usuario.
+- `layerSchema.js`: define cómo se conecta y cómo se comporta.
+- `popupSchemas/`: define qué información muestra.
+- `customLayers/`: úsalo únicamente para casos especiales.
+
+### Regla práctica
+- Capa estándar: toca `layersTree.js` y, si hace falta, `layerSchema.js`.
+- Capa con popup especial: añade `popupSchemas/`.
+- Capa con lógica visual excepcional: añade `customLayers/`.
+
+La meta es que una capa nueva no obligue a repartir reglas entre varios archivos sin control: primero árbol, luego esquema, y solo después extensiones puntuales.
