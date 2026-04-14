@@ -15,6 +15,7 @@ export default function ImportLayerPanel({
 
   return (
     <div
+      data-export-ignore="true"
       onClick={(event) => event.stopPropagation()}
       style={{
         position: "absolute",

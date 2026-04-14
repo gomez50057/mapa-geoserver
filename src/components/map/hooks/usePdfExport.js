@@ -10,6 +10,18 @@ import {
 } from "../utils/exportPdfUtils";
 import { escapeHtml, formatCoordinatePair } from "../utils/shared";
 
+function waitForAnimationFrame() {
+  return new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+}
+
+async function waitForStableMapFrame(map) {
+  if (!map) return;
+  if (typeof map.stop === "function") map.stop();
+  if (typeof map.invalidateSize === "function") map.invalidateSize(false);
+  await waitForAnimationFrame();
+  await waitForAnimationFrame();
+}
+
 export function usePdfExport({
   mapDivRef,
   mapRef,
@@ -45,8 +57,8 @@ export function usePdfExport({
   }, []);
 
   const handleExportPdf = useCallback(async () => {
-    const mapElement = mapDivRef.current;
     const map = mapRef.current;
+    const mapElement = map?.getContainer?.() || mapDivRef.current;
     const paperPreset = EXPORT_PAGE_PRESETS[exportPanelState.paperSize] || EXPORT_PAGE_PRESETS.letter;
 
     if (!mapElement || !map) {
@@ -62,6 +74,8 @@ export function usePdfExport({
     setExportPanelState((current) => ({ ...current, loading: true, error: "" }));
 
     try {
+      await waitForStableMapFrame(map);
+
       const legendGroups = buildLegendGroupsForExport(legends);
       const firstLegendChunks = splitLegendGroups(legendGroups, paperPreset.maxLegendUnitsFirstPage);
       const firstLegendGroups = firstLegendChunks[0] || [];

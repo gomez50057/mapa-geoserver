@@ -247,36 +247,94 @@ export default function LayerTree({
   onZSet = () => { },
   zMap = {},
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const selectedCount = selected?.size || 0;
+
   return (
-    <aside className={styles.sidebar}>
-      {loadingSummary?.total > 0 && (
-        <div className={styles.loadingSummary}>
-          <strong>Catálogo activo</strong>
-          <span>
-            {loadingSummary.ready} / {loadingSummary.total} capas listas
-          </span>
-          {loadingSummary.pending > 0 && <span>{loadingSummary.pending} preparando...</span>}
-          {loadingSummary.loading > 0 && <span>{loadingSummary.loading} cargando...</span>}
-          {loadingSummary.error > 0 && <span>{loadingSummary.error} con error</span>}
+    <aside
+      className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""}`}
+      data-export-obscure="sidebar"
+      data-export-anchor="left"
+    >
+      <div className={styles.sidebarShell}>
+        <div className={styles.sidebarHeader}>
+          <button
+            type="button"
+            className={styles.sidebarToggle}
+            onClick={() => setCollapsed((value) => !value)}
+            aria-label={collapsed ? "Expandir panel de capas" : "Minimizar panel de capas"}
+            title={collapsed ? "Expandir panel de capas" : "Minimizar panel de capas"}
+          >
+            <span className={styles.sidebarToggleIcon}>
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 3l8 4.5-8 4.5-8-4.5L12 3zm-8 9l8 4.5 8-4.5m-16 4.5l8 4.5 8-4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            {!collapsed && (
+              <span className={styles.sidebarHeaderCopy}>
+                <strong>Capas</strong>
+                <span>{selectedCount} activas</span>
+              </span>
+            )}
+            <span className={styles.sidebarToggleChevron} aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path
+                  d={collapsed ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </button>
         </div>
-      )}
-      {tree.map((root) => (
-        <Node
-          key={root.id || root.name}
-          node={root}
-          level={1}
-          selected={selected}
-          layerLoadState={layerLoadState}
-          onToggle={onToggle}
-          onToggleMany={onToggleMany}
-          onZUp={onZUp}
-          onZDown={onZDown}
-          onZTop={onZTop}
-          onZBottom={onZBottom}
-          onZSet={onZSet}
-          zMap={zMap}
-        />
-      ))}
+
+        {!collapsed ? (
+          <div className={styles.sidebarContent}>
+            {loadingSummary?.total > 0 && (
+              <div className={styles.loadingSummary}>
+                <strong>Catálogo activo</strong>
+                <span>
+                  {loadingSummary.ready} / {loadingSummary.total} capas listas
+                </span>
+                {loadingSummary.pending > 0 && <span>{loadingSummary.pending} preparando...</span>}
+                {loadingSummary.loading > 0 && <span>{loadingSummary.loading} cargando...</span>}
+                {loadingSummary.error > 0 && <span>{loadingSummary.error} con error</span>}
+              </div>
+            )}
+            {tree.map((root) => (
+              <Node
+                key={root.id || root.name}
+                node={root}
+                level={1}
+                selected={selected}
+                layerLoadState={layerLoadState}
+                onToggle={onToggle}
+                onToggleMany={onToggleMany}
+                onZUp={onZUp}
+                onZDown={onZDown}
+                onZTop={onZTop}
+                onZBottom={onZBottom}
+                onZSet={onZSet}
+                zMap={zMap}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className={styles.sidebarMini}>
+            <span className={styles.sidebarMiniCount}>{selectedCount}</span>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

@@ -3,6 +3,7 @@ export default function MapContextMenu({ contextMenuState, onClose, onCopy }) {
 
   return (
     <div
+      data-export-ignore="true"
       onClick={(event) => event.stopPropagation()}
       style={{
         position: "absolute",

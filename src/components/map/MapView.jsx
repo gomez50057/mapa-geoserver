@@ -233,6 +233,7 @@ export default function MapView({
 
     ensurePane(map, paneRef, DRAW_LAYER_PANE, 760);
     ensurePane(map, paneRef, DRAW_PREVIEW_PANE, 770);
+    ensurePane(map, paneRef, IMPORT_LAYER_PANE, 750);
     drawingLayerGroupRef.current = L.layerGroup().addTo(map);
     drawingPreviewGroupRef.current = L.layerGroup().addTo(map);
     drawingEditHandlesRef.current = L.layerGroup().addTo(map);

@@ -306,6 +306,8 @@ export default function LegendDock({
 
   return (
     <div
+      data-export-obscure="dock"
+      data-export-anchor="right bottom"
       style={{
         display: "flex",
         flexDirection: "column",

@@ -4,38 +4,43 @@ import { escapeHtml } from "./shared";
 export const EXPORT_PAGE_PRESETS = {
   letter: {
     label: "Carta",
-    pageSize: "letter landscape",
+    pageSize: "letter",
     pageLabel: "Carta",
     pdfWidthMm: 279.4,
     pdfHeightMm: 215.9,
     pixelWidth: 1056,
     pixelHeight: 816,
-    maxLegendUnitsFirstPage: 16,
+    maxLegendUnitsFirstPage: 8,
     maxLegendUnitsExtraPage: 28,
   },
   legal: {
     label: "Legal / Oficio",
-    pageSize: "legal landscape",
+    pageSize: "legal",
     pageLabel: "Legal / Oficio",
     pdfWidthMm: 355.6,
     pdfHeightMm: 215.9,
     pixelWidth: 1344,
     pixelHeight: 816,
-    maxLegendUnitsFirstPage: 22,
+    maxLegendUnitsFirstPage: 10,
     maxLegendUnitsExtraPage: 36,
   },
   tabloid: {
     label: "Tabloide / Doble carta",
-    pageSize: "tabloid landscape",
+    pageSize: "tabloid",
     pageLabel: "Tabloide / Doble carta",
     pdfWidthMm: 431.8,
     pdfHeightMm: 279.4,
     pixelWidth: 1632,
     pixelHeight: 1056,
-    maxLegendUnitsFirstPage: 30,
+    maxLegendUnitsFirstPage: 12,
     maxLegendUnitsExtraPage: 48,
   },
 };
+
+function toFinitePositiveNumber(value, fallback) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : fallback;
+}
 
 const normalizeLegendText = (value) => String(value || "").trim().toLowerCase();
 
@@ -99,21 +104,120 @@ async function getJsPdf() {
   return module.jsPDF;
 }
 
-export async function captureMapImage(mapElement) {
+function sanitizeCropMargins(margins = {}, width = 0, height = 0, scale = 1) {
+  const left = Math.max(0, Number(margins.left) || 0);
+  const right = Math.max(0, Number(margins.right) || 0);
+  const top = Math.max(0, Number(margins.top) || 0);
+  const bottom = Math.max(0, Number(margins.bottom) || 0);
+  const remainingWidth = width - (left + right) * scale;
+  const remainingHeight = height - (top + bottom) * scale;
+
+  if (remainingWidth < width * 0.35 || remainingHeight < height * 0.35) {
+    return { left: 0, right: 0, top: 0, bottom: 0 };
+  }
+
+  return { left, right, top, bottom };
+}
+
+function cropCanvasToVisibleArea(sourceCanvas, cropMargins = {}, scale = 1) {
+  const safeMargins = sanitizeCropMargins(cropMargins, sourceCanvas.width, sourceCanvas.height, scale);
+  const cropLeft = Math.round(safeMargins.left * scale);
+  const cropRight = Math.round(safeMargins.right * scale);
+  const cropTop = Math.round(safeMargins.top * scale);
+  const cropBottom = Math.round(safeMargins.bottom * scale);
+  const targetWidth = sourceCanvas.width - cropLeft - cropRight;
+  const targetHeight = sourceCanvas.height - cropTop - cropBottom;
+
+  if (targetWidth <= 0 || targetHeight <= 0) {
+    return sourceCanvas;
+  }
+
+  if (cropLeft === 0 && cropRight === 0 && cropTop === 0 && cropBottom === 0) {
+    return sourceCanvas;
+  }
+
+  const croppedCanvas = document.createElement("canvas");
+  croppedCanvas.width = targetWidth;
+  croppedCanvas.height = targetHeight;
+  const context = croppedCanvas.getContext("2d");
+  if (!context) return sourceCanvas;
+
+  context.drawImage(
+    sourceCanvas,
+    cropLeft,
+    cropTop,
+    targetWidth,
+    targetHeight,
+    0,
+    0,
+    targetWidth,
+    targetHeight
+  );
+
+  return croppedCanvas;
+}
+
+function hideElementsForExport(rootElement) {
+  if (!rootElement) return () => {};
+
+  const nodes = Array.from(
+    rootElement.querySelectorAll(
+      ".leaflet-control-container, .leaflet-top, .leaflet-bottom, .leaflet-left, .leaflet-right, .leaflet-popup-pane, .leaflet-tooltip-pane"
+    )
+  );
+
+  const previousStyles = nodes.map((node) => ({
+    node,
+    visibility: node.style.visibility,
+    opacity: node.style.opacity,
+    pointerEvents: node.style.pointerEvents,
+  }));
+
+  previousStyles.forEach(({ node }) => {
+    node.style.visibility = "hidden";
+    node.style.opacity = "0";
+    node.style.pointerEvents = "none";
+  });
+
+  return () => {
+    previousStyles.forEach(({ node, visibility, opacity, pointerEvents }) => {
+      node.style.visibility = visibility;
+      node.style.opacity = opacity;
+      node.style.pointerEvents = pointerEvents;
+    });
+  };
+}
+
+export async function captureMapImage(mapElement, options = {}) {
   if (!mapElement) throw new Error("No fue posible capturar el mapa actual.");
 
+  const scale = Number(options.scale) > 0 ? Number(options.scale) : 2;
   const html2canvas = await getHtml2Canvas();
-  const canvas = await html2canvas(mapElement, {
-    backgroundColor: "#dde3e8",
-    scale: 2,
-    useCORS: true,
-    imageTimeout: 15000,
-    logging: false,
-    ignoreElements: (element) =>
-      element.classList?.contains("leaflet-control-container") ||
-      element.classList?.contains("leaflet-popup-pane") ||
-      element.classList?.contains("leaflet-tooltip-pane"),
-  });
+  const restoreHiddenElements = hideElementsForExport(mapElement);
+  let sourceCanvas;
+
+  try {
+    sourceCanvas = await html2canvas(mapElement, {
+      backgroundColor: "#dde3e8",
+      scale,
+      useCORS: true,
+      imageTimeout: 15000,
+      logging: false,
+      ignoreElements: (element) =>
+        element.dataset?.exportIgnore === "true" ||
+        element.dataset?.exportRoot === "true" ||
+        element.classList?.contains("leaflet-control-container") ||
+        element.classList?.contains("leaflet-top") ||
+        element.classList?.contains("leaflet-bottom") ||
+        element.classList?.contains("leaflet-left") ||
+        element.classList?.contains("leaflet-right") ||
+        element.classList?.contains("leaflet-popup-pane") ||
+        element.classList?.contains("leaflet-tooltip-pane"),
+    });
+  } finally {
+    restoreHiddenElements();
+  }
+  const canvas = cropCanvasToVisibleArea(sourceCanvas, options.cropMargins, scale);
 
   return {
     src: canvas.toDataURL("image/jpeg", 0.92),
@@ -239,8 +343,8 @@ export function buildExportPagesMarkup({
       }
       .export-main {
         display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(250px, 0.82fr);
-        gap: 30px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
         align-items: start;
       }
       .export-map-card,
@@ -272,7 +376,7 @@ export function buildExportPagesMarkup({
         letter-spacing: .06em;
       }
       .export-map-frame {
-        padding: 8px 0 6px;
+        padding: 8px 0 0;
       }
       .export-map-shell {
         aspect-ratio: ${mapAspectRatio};
@@ -281,6 +385,7 @@ export function buildExportPagesMarkup({
         border: none;
         background: #dde3e8;
         box-shadow: 0 22px 40px rgba(0,0,0,0.12);
+        width: 100%;
       }
       .export-map-shell img {
         width: 100%;
@@ -302,7 +407,7 @@ export function buildExportPagesMarkup({
         color: #5d5959;
       }
       .export-legend-wrap {
-        padding: 12px 0 0 18px;
+        padding: 10px 0 0 18px;
         display: grid;
         gap: 12px;
         border-left: 2px solid rgba(105, 27, 50, 0.12);
@@ -370,6 +475,10 @@ export function buildExportPagesMarkup({
         line-height: 1.32;
         color: rgba(58, 52, 52, 0.78);
       }
+      .export-first-page-legend {
+        max-height: ${Math.max(120, Math.round(paperPreset.pixelHeight * 0.19))}px;
+        overflow: hidden;
+      }
     </style>
     <div class="pdf-root">
       <div class="pdf-page">
@@ -388,20 +497,13 @@ export function buildExportPagesMarkup({
         </header>
         <main class="export-main">
           <section class="export-map-card">
-            <div class="export-section-head">
-              <strong>Vista actual</strong>
-            </div>
             <div class="export-map-frame">
               <div class="export-map-shell">
                 <img src="${mapImageSrc}" alt="Mapa exportado" />
               </div>
             </div>
           </section>
-          <aside class="export-legend-card">
-            <div class="export-section-head">
-              <strong>Simbología</strong>
-              <span>Referencia</span>
-            </div>
+          <aside class="export-legend-card export-first-page-legend">
             <div class="export-legend-wrap">
               ${firstLegendMarkup}
             </div>
@@ -419,10 +521,13 @@ export function buildExportPagesMarkup({
 export async function renderPdfPages({ exportRoot, pages, paperPreset, fileName }) {
   const html2canvas = await getHtml2Canvas();
   const jsPDF = await getJsPdf();
+  const pdfWidthMm = toFinitePositiveNumber(paperPreset?.pdfWidthMm, 279.4);
+  const pdfHeightMm = toFinitePositiveNumber(paperPreset?.pdfHeightMm, 215.9);
+  const pageFormat = [pdfWidthMm, pdfHeightMm];
   const pdf = new jsPDF({
     orientation: "landscape",
     unit: "mm",
-    format: paperPreset.pageSize,
+    format: pageFormat,
     compress: true,
   });
 
@@ -436,9 +541,17 @@ export async function renderPdfPages({ exportRoot, pages, paperPreset, fileName 
       logging: false,
     });
 
+    const canvasWidth = toFinitePositiveNumber(pageCanvas?.width, 0);
+    const canvasHeight = toFinitePositiveNumber(pageCanvas?.height, 0);
+    if (!canvasWidth || !canvasHeight) {
+      throw new Error("No fue posible preparar una página válida para el PDF.");
+    }
+
     const pageData = pageCanvas.toDataURL("image/jpeg", 0.95);
-    if (index > 0) pdf.addPage(paperPreset.pageSize, "landscape");
-    pdf.addImage(pageData, "JPEG", 0, 0, paperPreset.pdfWidthMm, paperPreset.pdfHeightMm, undefined, "FAST");
+    const pageWidth = toFinitePositiveNumber(pdf.internal.pageSize.getWidth?.(), pdfWidthMm);
+    const pageHeight = toFinitePositiveNumber(pdf.internal.pageSize.getHeight?.(), pdfHeightMm);
+    if (index > 0) pdf.addPage(pageFormat, "landscape");
+    pdf.addImage(pageData, "JPEG", 0, 0, pageWidth, pageHeight);
   }
 
   pdf.save(fileName);
