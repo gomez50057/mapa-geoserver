@@ -1,6 +1,8 @@
 "use client";
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import styles from "./LayerTree.module.css";
+import LayerSearchInput from "./LayerSearchInput";
+import { filterTreeByQuery } from "@/data/layerSearch";
 
 /* === Utilidades === */
 function isLeaf(node) {
@@ -115,6 +117,7 @@ function Node({
   onZBottom,
   onZSet,
   zMap = {},
+  forceOpen = false,
 }) {
   const hasChildren = Array.isArray(node.children) && node.children.length > 0;
   const hasLayers = Array.isArray(node.layers) && node.layers.length > 0;
@@ -131,8 +134,7 @@ function Node({
   if (!isLeaf(node)) {
     return (
       <div className={styles.node} data-level={level}>
-        {/* ✅ Cerrado por defecto: se quitó `open` */}
-        <details className={styles.group}>
+        <details className={styles.group} open={forceOpen}>
           <summary className={styles.summary}>
             {/* Checkbox de grupo: enciende/apaga TODAS las hojas del nivel */}
             {leafs.length > 0 && (
@@ -165,6 +167,7 @@ function Node({
               onZBottom={onZBottom}
               onZSet={onZSet}
               zMap={zMap}
+              forceOpen={forceOpen}
             />
           ))}
 
@@ -248,7 +251,10 @@ export default function LayerTree({
   zMap = {},
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const selectedCount = selected?.size || 0;
+  const searchState = useMemo(() => filterTreeByQuery(tree, searchQuery), [tree, searchQuery]);
+  const displayTree = searchState.hasQuery ? searchState.tree : tree;
 
   return (
     <aside
@@ -300,6 +306,12 @@ export default function LayerTree({
 
         {!collapsed ? (
           <div className={styles.sidebarContent}>
+            <LayerSearchInput
+              value={searchQuery}
+              resultCount={searchState.matchCount}
+              onChange={setSearchQuery}
+              onClear={() => setSearchQuery("")}
+            />
             {loadingSummary?.total > 0 && (
               <div className={styles.loadingSummary}>
                 <strong>Catálogo activo</strong>
@@ -311,7 +323,7 @@ export default function LayerTree({
                 {loadingSummary.error > 0 && <span>{loadingSummary.error} con error</span>}
               </div>
             )}
-            {tree.map((root) => (
+            {displayTree.length > 0 ? displayTree.map((root) => (
               <Node
                 key={root.id || root.name}
                 node={root}
@@ -326,8 +338,14 @@ export default function LayerTree({
                 onZBottom={onZBottom}
                 onZSet={onZSet}
                 zMap={zMap}
+                forceOpen={searchState.hasQuery}
               />
-            ))}
+            )) : searchState.hasQuery ? (
+              <div className={styles.emptySearchState}>
+                <strong>No encontramos capas</strong>
+                <span>Prueba con otro nombre o término del grupo.</span>
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className={styles.sidebarMini}>
