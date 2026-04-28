@@ -1825,6 +1825,62 @@ export const INSTRUMENTOS_TREE =   {
         ],
       },
 
+      /* ==================== Tlaxcoapan ==================== */
+      {
+        id: "tlaxcoapan",
+        name: "Tlaxcoapan",
+        children: [
+          {
+            id: "tlaxcoapan_pmdu",
+            name: "PMDU",
+            children: [
+              {
+                id: "tlaxcoapan_capas_base",
+                name: "Capas base",
+                layers: [
+                  {
+                    id: "PMDU_Tlaxcoapan",
+                    name: "PMDU Tlaxcoapan",
+                    layerName: "pmdu_tlaxcoapan",
+                    type: "vector",
+                    hasLegend: false,
+                    defaultVisible: false,
+                    defaultZ: 860,
+                    meta: { color: "#BC955B" },
+                  },
+                  {
+                    id: "SueloUrbanizable_Tlaxcoapan",
+                    name: "Suelo urbanizable",
+                    layerName: "suelourbanizable",
+                    type: "vector",
+                    hasLegend: true,
+                    legendKey: "PMDU_Tlaxcoapan_Base",
+                    legendTitle: "Tlaxcoapan — PMDU",
+                    legendExtra: { color: "#D8A84E", text: "Suelo urbanizable" },
+                    defaultVisible: false,
+                    defaultZ: 861,
+                    meta: { color: "#D8A84E" },
+                  },
+                  {
+                    id: "SueloNoUrbanizable_Tlaxcoapan",
+                    name: "Suelo no urbanizable",
+                    layerName: "suelonourbanizable",
+                    type: "vector",
+                    hasLegend: true,
+                    legendKey: "PMDU_Tlaxcoapan_Base",
+                    legendTitle: "Tlaxcoapan — PMDU",
+                    legendExtra: { color: "#8AAE5A", text: "Suelo no urbanizable" },
+                    defaultVisible: false,
+                    defaultZ: 862,
+                    meta: { color: "#8AAE5A" },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
       /* ==================== Santiago de Tulantepec de Lugo Guerrero ==================== */
       {
         id: "santiago_tlg",
