@@ -1,7 +1,6 @@
 "use client";
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import styles from "./LayerTree.module.css";
-import LayerSearchInput from "./LayerSearchInput";
 import { filterTreeByQuery } from "@/data/layerSearch";
 
 /* === Utilidades === */
@@ -238,6 +237,7 @@ function Node({
 /* === Export principal === */
 export default function LayerTree({
   tree = [],
+  searchQuery = "",
   selected = new Set(),
   layerLoadState = {},
   loadingSummary = null,
@@ -251,7 +251,6 @@ export default function LayerTree({
   zMap = {},
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const selectedCount = selected?.size || 0;
   const searchState = useMemo(() => filterTreeByQuery(tree, searchQuery), [tree, searchQuery]);
   const displayTree = searchState.hasQuery ? searchState.tree : tree;
@@ -306,12 +305,6 @@ export default function LayerTree({
 
         {!collapsed ? (
           <div className={styles.sidebarContent}>
-            <LayerSearchInput
-              value={searchQuery}
-              resultCount={searchState.matchCount}
-              onChange={setSearchQuery}
-              onClear={() => setSearchQuery("")}
-            />
             {loadingSummary?.total > 0 && (
               <div className={styles.loadingSummary}>
                 <strong>Catálogo activo</strong>

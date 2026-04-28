@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import LayerTree from "@/components/LayerTree";
 import { LAYERS_TREE } from "@/data/layersTree";
+import { filterTreeByQuery } from "@/data/layerSearch";
 import { useLayerSelection } from "@/hooks/useLayerSelection";
 import styles from "./page.module.css";
 
@@ -27,6 +28,7 @@ export default function Home() {
   } = useLayerSelection(LAYERS_TREE);
 
   const [layerLoadState, setLayerLoadState] = useState({});
+  const [layerSearchQuery, setLayerSearchQuery] = useState("");
 
   const onLayerStatusChange = useCallback((layerId, nextState) => {
     setLayerLoadState((previous) => {
@@ -75,10 +77,16 @@ export default function Home() {
     };
   }, [layerLoadState, selectedLayers]);
 
+  const layerSearchState = useMemo(
+    () => filterTreeByQuery(LAYERS_TREE, layerSearchQuery),
+    [layerSearchQuery]
+  );
+
   return (
     <div className={styles.layout}>
       <LayerTree
         tree={LAYERS_TREE}
+        searchQuery={layerSearchQuery}
         selected={selectedIds}
         onToggle={onToggleLayer}
         onToggleMany={onToggleMany}
@@ -96,6 +104,9 @@ export default function Home() {
         selectedLayers={selectedLayers}
         zMap={zMap}
         legends={legendList}
+        layerSearchQuery={layerSearchQuery}
+        onLayerSearchQueryChange={setLayerSearchQuery}
+        layerSearchMatchCount={layerSearchState.matchCount}
         layerOpacityMap={opacityMap}
         layerLoadState={layerLoadState}
         loadingSummary={loadingSummary}

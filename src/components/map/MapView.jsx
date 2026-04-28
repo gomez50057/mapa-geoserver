@@ -8,6 +8,7 @@ import DrawingToolsPanel from "./DrawingToolsPanel";
 import ImportLayerPanel from "./ImportLayerPanel";
 import ExportPdfPanel from "./ExportPdfPanel";
 import MapContextMenu from "./MapContextMenu";
+import MapSearchBar from "./MapSearchBar";
 import { addMapControls } from "./utils/controls";
 import { HIDALGO_REGION_BOUNDS } from "@/config/geoserver";
 import { IMPORT_LAYER_PANE } from "./utils/importUtils";
@@ -17,6 +18,7 @@ import { usePdfExport } from "./hooks/usePdfExport";
 import { useDrawingTools } from "./hooks/useDrawingTools";
 import { useMapInteractions } from "./hooks/useMapInteractions";
 import { useMapLayersRuntime } from "./hooks/useMapLayersRuntime";
+import { useMapSearch } from "./hooks/useMapSearch";
 
 const FALLBACK_BOUNDS = L.latLngBounds(HIDALGO_REGION_BOUNDS[0], HIDALGO_REGION_BOUNDS[1]);
 const clampZ = (z) => Math.max(-9999, Math.min(9999, Math.round(Number(z ?? 400))));
@@ -45,6 +47,9 @@ export default function MapView({
   selectedLayers = [],
   zMap = {},
   legends = [],
+  layerSearchQuery = "",
+  onLayerSearchQueryChange = () => {},
+  layerSearchMatchCount = 0,
   layerOpacityMap = {},
   layerLoadState = {},
   loadingSummary = null,
@@ -60,6 +65,7 @@ export default function MapView({
   const importedOverlayRef = useRef(null);
   const importInputRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
+  const [searchMode, setSearchMode] = useState("layers");
 
   const queryableDefs = useMemo(
     () =>
@@ -129,6 +135,23 @@ export default function MapView({
     editingFeatureId,
     isMosaicUpdating: mosaicStatus.isUpdating,
   });
+
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    results: searchResults,
+    loading: searchLoading,
+    message: searchMessage,
+    open: searchOpen,
+    setOpen: setSearchOpen,
+    expanded: searchExpanded,
+    setExpanded: setSearchExpanded,
+    highlightedIndex: searchHighlightedIndex,
+    setHighlightedIndex: setSearchHighlightedIndex,
+    selectResult: selectSearchResult,
+    clearSearch,
+    closeSearch,
+  } = useMapSearch({ mapRef });
 
   const {
     importPanelState,
@@ -367,6 +390,33 @@ export default function MapView({
           </span>
         </div>
       )}
+      <MapSearchBar
+        mode={searchMode}
+        onModeChange={setSearchMode}
+        layerQuery={layerSearchQuery}
+        layerResultCount={layerSearchMatchCount}
+        onLayerQueryChange={onLayerSearchQueryChange}
+        onLayerClear={() => onLayerSearchQueryChange("")}
+        query={searchQuery}
+        loading={searchLoading}
+        open={searchMode === "map" && (searchOpen || Boolean(searchQuery.trim()))}
+        expanded={searchExpanded}
+        results={searchResults}
+        message={searchMessage}
+        highlightedIndex={searchHighlightedIndex}
+        onQueryChange={(value) => {
+          setSearchQuery(value);
+          setSearchOpen(Boolean(value.trim()));
+        }}
+        onHighlightChange={setSearchHighlightedIndex}
+        onSelectResult={selectSearchResult}
+        onClear={clearSearch}
+        onClose={closeSearch}
+        onExpand={() => {
+          setSearchExpanded(true);
+          setSearchOpen(Boolean(searchQuery.trim()));
+        }}
+      />
       <ImportLayerPanel
         open={importPanelState.open}
         loading={importPanelState.loading}
