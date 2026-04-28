@@ -1,0 +1,8 @@
+.page {
+  min-height: 100vh;
+  color: #102421;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(188, 149, 91, 0.22), transparent 24rem),
+    linear-gradient(180deg, #dce8e5 0%, #f7f5ef 38%, #ffffff 100%);
+  overflow-x: hidden;
+}

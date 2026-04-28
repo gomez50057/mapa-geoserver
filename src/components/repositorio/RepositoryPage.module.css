@@ -1,0 +1,62 @@
+.page {
+  min-height: 100vh;
+  padding: 18px 0 42px;
+  color: #102421;
+  background:
+    radial-gradient(circle at 84% 8%, rgba(188, 149, 91, 0.2), transparent 22rem),
+    linear-gradient(180deg, #dce8e5 0%, #f8f7f2 42%, #ffffff 100%);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: calc(100% - 32px);
+  margin: 0 auto 18px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 20px 50px rgba(16, 36, 33, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.topbar a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: #0c5552;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.topbar div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.topbar div a:first-child {
+  color: #ffffff;
+  background: #691b32;
+}
+
+.brand {
+  color: #102421;
+}
+
+@media (width <= 620px) {
+  .topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .topbar div,
+  .topbar a {
+    width: 100%;
+    justify-content: center;
+  }
+}

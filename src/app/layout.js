@@ -1,4 +1,6 @@
 import "@/styles/globals.css";
+import AppChrome from "@/components/shared/AppChrome";
+import GoogleAnalytics from "@/components/shared/GoogleAnalytics";
 
 export const metadata = {
   applicationName: "Mapa digital regional y metropolitano",
@@ -58,7 +60,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body style={{ margin: 0 }}>{children}</body>
+      <body style={{ margin: 0 }}>
+        <GoogleAnalytics />
+        <AppChrome>{children}</AppChrome>
+      </body>
     </html>
   );
 }

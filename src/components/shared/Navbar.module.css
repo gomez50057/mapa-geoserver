@@ -1,0 +1,240 @@
+.Navbar {
+  --size_Fonts_M: clamp(0.9rem, 0.8rem + 0.15vw, 1.1rem);
+
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 60px;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  transition:
+    top 0.3s ease-in-out,
+    backdrop-filter 0.3s ease-in-out,
+    background-color 0.3s ease-in-out;
+}
+
+.hidden {
+  top: -60px;
+}
+
+.active {
+  top: 0;
+}
+
+.NavbarList {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 90vw;
+  padding: 4px 20px;
+  margin: 10px 0;
+  background-color: hsla(240, 33%, 96%, 0.81);
+  box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(3px);
+  border-radius: 100vw;
+}
+
+.NavbarImg img {
+  height: 30px;
+  margin: 0 5px;
+}
+
+/* BOTÓN CÍRCULO (MOBILE) */
+.NavbarCirculo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--blanco);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 6px 20px rgba(0, 0, 0, 0.19);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.NavbarCirculo img {
+  width: 90%;
+  height: auto;
+  border-radius: 50%;
+}
+
+.NavbarCirculo:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.4),
+    0 14px 28px rgba(0, 0, 0, 0.25);
+}
+
+/* MENÚ HORIZONTAL (DESKTOP) */
+.navbarOpcDesktop {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbarOpcDesktop li {
+  position: relative;
+}
+
+.navbarOpcDesktop li a {
+  display: block;
+  text-align: center;
+  padding-block: clamp(0.5rem, 0.4rem + 0.25vw, 0.8rem);
+  padding-inline: clamp(0.7rem, 0.6rem + 0.15vw, 1.2rem);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--size_Fonts_M);
+  color: var(--vinoOsc);
+  transition: color 0.3s, text-decoration 0.3s;
+}
+
+.navbarOpcDesktop li a:hover {
+  color: var(--vinoClr);
+  text-decoration: underline;
+}
+
+/* para el texto que hace de toggle en desktop */
+.navbarOpcDesktop .dropdownToggle {
+  font-size: var(--size_Fonts_M);
+}
+
+/* DROPDOWN BASE */
+.dropdownToggle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--vinoOsc);
+  cursor: pointer;
+  padding: 10px;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.dropdownMenu {
+  display: none;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease-in-out;
+}
+
+/* Estilo base de los links dentro del dropdown (aplica tanto para mobile como desktop hover)*/
+.dropdownMenu li a {
+  display: block;
+  padding: 10px 16px;
+  font-size: 1rem;
+  color: var(--vinoOsc);
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.dropdownMenu li a:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+/* DROPDOWN DESKTOP (HOVER) */
+@media (min-width: 1024px) {
+  .dropdown:hover .dropdownMenu {
+    display: flex;
+    max-height: 500px;
+    background-color: hsla(240, 33%, 96%, 0.95);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    border-radius: 0.5rem;
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.15);
+    z-index: 2000;
+  }
+}
+
+/* DROPDOWN MOBILE (CLICK) */
+.dropdownOpen .dropdownMenu {
+  display: flex;
+  max-height: 500px;
+  background-color: hsla(240, 33%, 96%, 0.95);
+  border-radius: 0.5rem;
+  box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* MENÚ DESPLEGABLE (MOBILE) */
+.NavbarMenuContainer {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  background-color: hsla(240, 33%, 96%, 0.95);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.5s ease-in-out;
+  z-index: 999;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 10px 10px;
+}
+
+.menuOpen {
+  max-height: 500px;
+}
+
+.navbarOpcMobile {
+  list-style: none;
+  margin: 0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.navbarOpcMobile li {
+  width: 100%;
+  text-align: center;
+  margin: 5px 0;
+}
+
+.navbarOpcMobile li a {
+  display: block;
+  padding: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--vinoOsc);
+  transition: background-color 0.3s;
+}
+
+.navbarOpcMobile li a:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+@media (min-width: 1025px) and (max-width: 1340px) {
+  .NavbarImg img {
+    height: 25px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .NavbarCirculo {
+    display: flex;
+  }
+
+  .navbarOpcDesktop {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .NavbarImg img {
+    height: 18px;
+  }
+}
