@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import LayerTree from "@/components/LayerTree";
 import { LAYERS_TREE } from "@/data/layersTree";
 import { filterTreeByQuery } from "@/data/layerSearch";
@@ -84,6 +85,13 @@ export default function MapaPage() {
 
   return (
     <div className={styles.layout}>
+      <Link className={styles.homeLink} href="/" aria-label="Regresar a la página principal">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.8 4.3 3.1 12l7.7 7.7 1.4-1.4L6.9 13H21v-2H6.9l5.3-5.3-1.4-1.4Z" />
+        </svg>
+        Inicio
+      </Link>
+
       <LayerTree
         tree={LAYERS_TREE}
         searchQuery={layerSearchQuery}

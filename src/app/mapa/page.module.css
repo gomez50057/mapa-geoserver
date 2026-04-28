@@ -5,3 +5,47 @@
   height: 100dvh;
   overflow: hidden;
 }
+
+.homeLink {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 100vw;
+  color: #691b32;
+  background: rgba(245, 243, 245, 0.88);
+  box-shadow: 0 14px 34px rgba(16, 36, 33, 0.18);
+  backdrop-filter: blur(12px);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-decoration: none;
+  transform: translateX(-50%);
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.homeLink:hover {
+  background: #ffffff;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.homeLink svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+@media (width <= 720px) {
+  .homeLink {
+    bottom: 12px;
+    min-height: 30px;
+    padding: 0 9px;
+    font-size: 0.72rem;
+  }
+}
