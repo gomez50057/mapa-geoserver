@@ -1,31 +1,56 @@
 import "@/styles/globals.css";
 
 export const metadata = {
-  applicationName: 'geogeoconnect',
+  applicationName: "Mapa digital regional y metropolitano",
   title: {
-    default: 'geogeoconnect',
-    template: '%s | geogeoconnect',
+    default: "Mapa digital regional y metropolitano",
+    template: "%s | Mapa digital regional y metropolitano",
   },
   description:
-      'Visor capas PMDU.',
-  keywords: ['Next.js', 'Leaflet', 'GeoJSON', 'mosaicos', 'SIG', 'PMDU', 'Hidalgo'],
-  authors: [{ name: 'Gabriel Gómez' }],
-  icons: { icon: '/favicon.ico' },
-  alternates: { canonical: '/' },
+    "Visor cartográfico para consulta de capas regionales, metropolitanas y de instrumentos de planeación urbana del Estado de Hidalgo.",
+  keywords: [
+    "Mapa digital regional y metropolitano",
+    "SIG",
+    "Hidalgo",
+    "GeoServer",
+    "Leaflet",
+    "PMDU",
+    "planeación urbana",
+    "zonas metropolitanas",
+    "cartografía",
+    "ordenamiento territorial",
+  ],
+  authors: [
+    {
+      name: "Unidad de Planeación y Prospectiva - Coordinación General de Planeación y Proyectos - Gabriel Gómez Gómez",
+    },
+  ],
+  creator: "Unidad de Planeación y Prospectiva - Coordinación General de Planeación y Proyectos",
+  publisher: "Gobierno del Estado de Hidalgo",
+  category: "Geoinformación y planeación territorial",
+  icons: { icon: "/favicon.ico" },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
-    title: 'geogeoconnect',
+    title: "Mapa digital regional y metropolitano",
     description:
-      'Visor capas PMDU.',
-    url: '/',
-    siteName: 'geogeoconnect',
-    locale: 'es_MX',
-    type: 'website',
+      "Consulta cartográfica de capas regionales, metropolitanas y de instrumentos de planeación urbana para el Estado de Hidalgo.",
+    siteName: "Mapa digital regional y metropolitano",
+    locale: "es_MX",
+    type: "website",
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'geogeoconnect',
+    card: "summary_large_image",
+    title: "Mapa digital regional y metropolitano",
     description:
-      'Visor capas PMDU.',
+      "Visor cartográfico para consulta de capas regionales, metropolitanas y de planeación urbana en Hidalgo.",
   },
 };
 
