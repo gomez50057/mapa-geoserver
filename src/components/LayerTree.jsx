@@ -143,7 +143,7 @@ function Node({
                 ref={(el) => { if (el) el.indeterminate = someOn; }}
                 onChange={(e) => onToggleMany(leafs, e.target.checked)}
                 onClick={(e) => e.stopPropagation()}
-                style={{ marginRight: 8 }}
+                className={styles.treeCheckbox}
                 title="Activar/Desactivar todas las capas de este grupo"
               />
             )}
@@ -181,6 +181,7 @@ function Node({
                   type="checkbox"
                   checked={isOn}
                   onChange={() => onToggle(layer)}
+                  className={styles.treeCheckbox}
                 />
                 <span>{layer.name}</span>
                 {isOn && (
@@ -213,7 +214,7 @@ function Node({
   const status = layerLoadState[node.id]?.status || "idle";
   return (
     <div className={styles.leaf}>
-      <input type="checkbox" checked={isOn} onChange={() => onToggle(node)} />
+      <input type="checkbox" checked={isOn} onChange={() => onToggle(node)} className={styles.treeCheckbox} />
       <span>{node.name}</span>
       {isOn && (
         <span className={`${styles.stateBadge} ${styles[`state_${status}`] || ""}`}>
