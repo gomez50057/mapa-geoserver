@@ -95,13 +95,13 @@ export function splitLegendGroups(groups, maxUnits) {
 }
 
 async function getHtml2Canvas() {
-  const module = await import("html2canvas");
-  return module.default;
+  const html2CanvasModule = await import("html2canvas");
+  return html2CanvasModule.default;
 }
 
 async function getJsPdf() {
-  const module = await import("jspdf");
-  return module.jsPDF;
+  const jsPdfModule = await import("jspdf");
+  return jsPdfModule.jsPDF;
 }
 
 function sanitizeCropMargins(margins = {}, width = 0, height = 0, scale = 1) {

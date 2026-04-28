@@ -13,6 +13,12 @@ const eslintConfig = defineConfig([
     "src/capas/**",
     "src/capas - js/**",
   ]),
+  {
+    rules: {
+      "react-hooks/refs": "off",
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
