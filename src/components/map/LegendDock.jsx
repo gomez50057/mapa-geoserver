@@ -96,9 +96,162 @@ function Section({ title, icon, defaultOpen = true, children, subtitle = null })
             overflowY: "auto",
             overscrollBehavior: "contain",
             scrollbarGutter: "stable",
+            paddingBottom: 18,
           }}
         >
           {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ActiveTreeNode({
+  node,
+  layerOpacityMap,
+  onLayerOpacityChange,
+  onManyLayerOpacityChange,
+}) {
+  const [open, setOpen] = useState(node.depth <= 1);
+  const descendantIds = collectLayerIds(node);
+  const branchHasChildren = node.children.length > 0;
+  const branchHasLayers = node.layers.length > 0;
+
+  return (
+    <div
+      key={node.key}
+      style={{
+        display: "grid",
+        gap: 8,
+        paddingTop: node.depth === 0 ? 0 : 4,
+        paddingLeft: node.depth === 0 ? 0 : 14,
+        marginLeft: node.depth === 0 ? 0 : 8,
+        borderLeft: node.depth === 0 ? "none" : "2px solid rgba(122,29,49,0.1)",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gap: 6,
+          padding: node.depth === 0 ? "0 0 8px" : "8px 10px 8px 12px",
+          borderRadius: node.depth === 0 ? 0 : 12,
+          background:
+            node.depth === 0
+              ? "transparent"
+              : "linear-gradient(135deg, rgba(122,29,49,0.05), rgba(188,149,91,0.12))",
+          border: node.depth === 0 ? "none" : "1px solid rgba(122,29,49,0.08)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 10,
+            width: "100%",
+            padding: 0,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            textAlign: "left",
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <strong
+              style={{
+                display: "block",
+                fontSize: node.depth === 0 ? 12.8 : 12.2,
+                color: "#222",
+                lineHeight: 1.2,
+              }}
+            >
+              {node.title}
+            </strong>
+            <span style={{ fontSize: 11.2, color: "#666" }}>
+              {descendantIds.length} capa{descendantIds.length === 1 ? "" : "s"}
+              {branchHasChildren ? ` en ${node.children.length} grupo${node.children.length === 1 ? "" : "s"}` : ""}
+            </span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexShrink: 0,
+              color: "#666",
+            }}
+          >
+            <span style={{ fontSize: 11.2 }}>{Math.round(node.opacity * 100)}%</span>
+            <ChevronIcon open={open} />
+          </div>
+        </button>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={Math.round(node.opacity * 100)}
+          onChange={(event) => onManyLayerOpacityChange(descendantIds, Number(event.target.value) / 100)}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      {open && branchHasLayers ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          {node.layers.map((layer) => {
+            const opacity = Number(layerOpacityMap[layer.id] ?? 1);
+            return (
+              <div
+                key={layer.id}
+                style={{
+                  display: "grid",
+                  gap: 6,
+                  padding: "8px 0 0 12px",
+                  marginLeft: 8,
+                  borderLeft: "2px solid rgba(0,0,0,0.08)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: "block", fontSize: 12.2, color: "#222", lineHeight: 1.2 }}>
+                      {layer.name}
+                    </strong>
+                    <span style={{ fontSize: 11, color: "#777" }}>
+                      {Array.isArray(layer.groupPath) && layer.groupPath.length > 1
+                        ? layer.groupPath.slice(1).join(" / ")
+                        : "Capa"}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11.2, color: "#666", flexShrink: 0 }}>{Math.round(opacity * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={Math.round(opacity * 100)}
+                  onChange={(event) => onLayerOpacityChange(layer.id, Number(event.target.value) / 100)}
+                  style={{ width: "100%" }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {open && branchHasChildren ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          {node.children.map((child) => (
+            <ActiveTreeNode
+              key={child.key}
+              node={child}
+              layerOpacityMap={layerOpacityMap}
+              onLayerOpacityChange={onLayerOpacityChange}
+              onManyLayerOpacityChange={onManyLayerOpacityChange}
+            />
+          ))}
         </div>
       ) : null}
     </div>
@@ -194,116 +347,6 @@ export default function LegendDock({
 
   if (!hasLegends && !hasActiveLayers) return null;
 
-  const renderLayerBranch = (node) => {
-    const descendantIds = collectLayerIds(node);
-    const branchHasChildren = node.children.length > 0;
-    const branchHasLayers = node.layers.length > 0;
-
-    return (
-      <div
-        key={node.key}
-        style={{
-          display: "grid",
-          gap: 8,
-          paddingTop: node.depth === 0 ? 0 : 4,
-          paddingLeft: node.depth === 0 ? 0 : 14,
-          marginLeft: node.depth === 0 ? 0 : 8,
-          borderLeft: node.depth === 0 ? "none" : "2px solid rgba(122,29,49,0.1)",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gap: 6,
-            padding: node.depth === 0 ? "0 0 8px" : "8px 10px 8px 12px",
-            borderRadius: node.depth === 0 ? 0 : 12,
-            background:
-              node.depth === 0
-                ? "transparent"
-                : "linear-gradient(135deg, rgba(122,29,49,0.05), rgba(188,149,91,0.12))",
-            border: node.depth === 0 ? "none" : "1px solid rgba(122,29,49,0.08)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-            <div style={{ minWidth: 0 }}>
-              <strong
-                style={{
-                  display: "block",
-                  fontSize: node.depth === 0 ? 12.8 : 12.2,
-                  color: "#222",
-                  lineHeight: 1.2,
-                }}
-              >
-                {node.title}
-              </strong>
-              <span style={{ fontSize: 11.2, color: "#666" }}>
-                {descendantIds.length} capa{descendantIds.length === 1 ? "" : "s"}
-                {branchHasChildren ? ` en ${node.children.length} grupo${node.children.length === 1 ? "" : "s"}` : ""}
-              </span>
-            </div>
-            <span style={{ fontSize: 11.2, color: "#666", flexShrink: 0 }}>
-              {Math.round(node.opacity * 100)}%
-            </span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="1"
-            value={Math.round(node.opacity * 100)}
-            onChange={(event) => onManyLayerOpacityChange(descendantIds, Number(event.target.value) / 100)}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        {branchHasLayers ? (
-          <div style={{ display: "grid", gap: 8 }}>
-            {node.layers.map((layer) => {
-              const opacity = Number(layerOpacityMap[layer.id] ?? 1);
-              return (
-                <div
-                  key={layer.id}
-                  style={{
-                    display: "grid",
-                    gap: 6,
-                    padding: "8px 0 0 12px",
-                    marginLeft: 8,
-                    borderLeft: "2px solid rgba(0,0,0,0.08)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <strong style={{ display: "block", fontSize: 12.2, color: "#222", lineHeight: 1.2 }}>
-                        {layer.name}
-                      </strong>
-                      <span style={{ fontSize: 11, color: "#777" }}>
-                        {Array.isArray(layer.groupPath) && layer.groupPath.length > 1
-                          ? layer.groupPath.slice(1).join(" / ")
-                          : "Capa"}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: 11.2, color: "#666", flexShrink: 0 }}>{Math.round(opacity * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={Math.round(opacity * 100)}
-                    onChange={(event) => onLayerOpacityChange(layer.id, Number(event.target.value) / 100)}
-                    style={{ width: "100%" }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {branchHasChildren ? <div style={{ display: "grid", gap: 8 }}>{node.children.map(renderLayerBranch)}</div> : null}
-      </div>
-    );
-  };
-
   return (
     <div
       data-export-obscure="dock"
@@ -312,8 +355,8 @@ export default function LegendDock({
         display: "flex",
         flexDirection: "column",
         gap: 10,
-        maxHeight: "60vh",
-        overflowY: "auto",
+        maxHeight: "unset",
+        overflow: "visible",
         zIndex: 9999,
         ...style,
       }}
@@ -392,7 +435,17 @@ export default function LegendDock({
           icon={<LayersIcon />}
           subtitle={`${activeLayers.length} capa${activeLayers.length === 1 ? "" : "s"} visible${activeLayers.length === 1 ? "" : "s"}`}
         >
-          <div style={{ display: "grid", gap: 12 }}>{activeTree.map(renderLayerBranch)}</div>
+          <div style={{ display: "grid", gap: 12 }}>
+            {activeTree.map((node) => (
+              <ActiveTreeNode
+                key={node.key}
+                node={node}
+                layerOpacityMap={layerOpacityMap}
+                onLayerOpacityChange={onLayerOpacityChange}
+                onManyLayerOpacityChange={onManyLayerOpacityChange}
+              />
+            ))}
+          </div>
         </Section>
       )}
     </div>
