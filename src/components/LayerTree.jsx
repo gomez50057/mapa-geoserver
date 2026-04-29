@@ -256,6 +256,10 @@ export default function LayerTree({
   const searchState = useMemo(() => filterTreeByQuery(tree, searchQuery), [tree, searchQuery]);
   const displayTree = searchState.hasQuery ? searchState.tree : tree;
 
+  useEffect(() => {
+    if (searchState.hasQuery) setCollapsed(false);
+  }, [searchState.hasQuery]);
+
   return (
     <aside
       className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""}`}

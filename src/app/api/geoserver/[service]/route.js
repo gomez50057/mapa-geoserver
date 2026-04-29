@@ -14,17 +14,112 @@ const SERVICE_TARGETS = {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const MAX_QUERY_LENGTH = 8000;
+const UPSTREAM_TIMEOUT_MS = 12000;
+const ALLOWED_SERVICES = new Set(["tilewms", "wms", "wfs"]);
+const ALLOWED_REQUESTS = {
+  tilewms: new Set(["getcapabilities", "getmap", "getfeatureinfo", "getlegendgraphic"]),
+  wms: new Set(["getcapabilities", "getmap", "getfeatureinfo", "getlegendgraphic"]),
+  wfs: new Set(["getcapabilities", "describefeaturetype", "getfeature"]),
+};
+const ALLOWED_QUERY_PARAMS = new Set([
+  "bbox",
+  "buffer",
+  "exceptions",
+  "feature_count",
+  "format",
+  "height",
+  "info_format",
+  "layers",
+  "maxfeatures",
+  "outputformat",
+  "query_layers",
+  "request",
+  "service",
+  "srs",
+  "srsname",
+  "styles",
+  "tiled",
+  "tilesorigin",
+  "transparent",
+  "typename",
+  "typenames",
+  "version",
+  "width",
+  "x",
+  "y",
+]);
+const QUALIFIED_LAYER_PATTERN = /^[A-Za-z0-9_]+:[A-Za-z0-9_.-]+$/;
+
+function getSearchParamCaseInsensitive(searchParams, name) {
+  const wanted = name.toLowerCase();
+  for (const [key, value] of searchParams.entries()) {
+    if (key.toLowerCase() === wanted) return value;
+  }
+  return "";
+}
+
+function parseLayerNames(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function validateLayerNames(searchParams) {
+  const layerParamNames = ["layers", "query_layers", "typename", "typenames"];
+  for (const paramName of layerParamNames) {
+    const value = getSearchParamCaseInsensitive(searchParams, paramName);
+    if (!value) continue;
+    const layerNames = parseLayerNames(value);
+    if (!layerNames.length || layerNames.some((layerName) => !QUALIFIED_LAYER_PATTERN.test(layerName))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function validateIncomingRequest(service, incoming) {
+  if (!ALLOWED_SERVICES.has(service)) {
+    return { ok: false, status: 404, message: "Unsupported GeoServer service" };
+  }
+
+  if (incoming.search.length > MAX_QUERY_LENGTH) {
+    return { ok: false, status: 414, message: "GeoServer query is too long" };
+  }
+
+  const requestType = getSearchParamCaseInsensitive(incoming.searchParams, "request").toLowerCase();
+  if (!requestType || !ALLOWED_REQUESTS[service]?.has(requestType)) {
+    return { ok: false, status: 400, message: "Unsupported GeoServer request" };
+  }
+
+  for (const key of incoming.searchParams.keys()) {
+    if (!ALLOWED_QUERY_PARAMS.has(key.toLowerCase())) {
+      return { ok: false, status: 400, message: "Unsupported GeoServer parameter" };
+    }
+  }
+
+  if (!validateLayerNames(incoming.searchParams)) {
+    return { ok: false, status: 400, message: "Invalid GeoServer layer name" };
+  }
+
+  return { ok: true };
+}
+
 function buildUpstreamUrl(service, requestUrl) {
   const target = SERVICE_TARGETS[service];
   if (!target) return null;
 
   const incoming = new URL(requestUrl);
+  const validation = validateIncomingRequest(service, incoming);
+  if (!validation.ok) return validation;
+
   const upstream = new URL(target);
   incoming.searchParams.forEach((value, key) => {
     upstream.searchParams.set(key, value);
   });
 
-  return upstream.toString();
+  return { ok: true, url: upstream.toString() };
 }
 
 function buildCorsHeaders() {
@@ -32,6 +127,7 @@ function buildCorsHeaders() {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Accept, Content-Type",
+    "X-Content-Type-Options": "nosniff",
   };
 }
 
@@ -45,18 +141,25 @@ export async function OPTIONS() {
 export async function GET(request, context) {
   const params = await context?.params;
   const service = params?.service;
-  const upstreamUrl = buildUpstreamUrl(service, request.url);
-  if (!upstreamUrl) {
-    return new Response("Unsupported GeoServer service", { status: 404 });
+  const upstreamTarget = buildUpstreamUrl(service, request.url);
+  if (!upstreamTarget?.ok) {
+    return Response.json(
+      { message: upstreamTarget?.message || "Unsupported GeoServer service" },
+      { status: upstreamTarget?.status || 404, headers: buildCorsHeaders() }
+    );
   }
 
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), UPSTREAM_TIMEOUT_MS);
+
   try {
-    const upstream = await fetch(upstreamUrl, {
+    const upstream = await fetch(upstreamTarget.url, {
       method: "GET",
       headers: {
         Accept: request.headers.get("accept") || "*/*",
       },
       cache: "no-store",
+      signal: abortController.signal,
     });
 
     const headers = new Headers(buildCorsHeaders());
@@ -72,7 +175,7 @@ export async function GET(request, context) {
       headers,
     });
   } catch (error) {
-    console.error("GeoServer proxy failed", { service, upstreamUrl, error });
+    console.error("GeoServer proxy failed", { service, error });
     return Response.json(
       {
         message: "GeoServer proxy failed",
@@ -83,5 +186,7 @@ export async function GET(request, context) {
         headers: buildCorsHeaders(),
       }
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }

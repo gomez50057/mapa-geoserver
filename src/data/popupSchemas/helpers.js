@@ -8,6 +8,7 @@ import {
   renderRows,
   renderSectionSubtitle,
   renderSectionTitle,
+  sanitizeExternalUrl,
 } from "../fieldFormatters";
 
 export {
@@ -20,6 +21,7 @@ export {
   renderRows,
   renderSectionSubtitle,
   renderSectionTitle,
+  sanitizeExternalUrl,
 };
 
 export function getProp(properties, ...keys) {

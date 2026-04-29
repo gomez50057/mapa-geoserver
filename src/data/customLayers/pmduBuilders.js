@@ -1,6 +1,6 @@
 import L from "leaflet";
 import { getLegendStyle } from "../simbologia";
-import { asHa, buildPopupHTML } from "./helpers";
+import { asHa, buildPopupHTML, escapeHtml } from "./helpers";
 
 function pmduPoly(data, paneId, ld, popupBuilder) {
   const sty = getLegendStyle(ld?.legendKey, ld?.legendItem) || {};
@@ -29,7 +29,7 @@ function pmduPoly(data, paneId, ld, popupBuilder) {
 }
 
 const popupPachuca = (p) => {
-  const estatus = p?.Name_1 ? `<b>Estatus:</b> ${p.Name_1}<br>` : "";
+  const estatus = p?.Name_1 ? `<b>Estatus:</b> ${escapeHtml(p.Name_1)}<br>` : "";
   const area = p?.Ar != null ? `<b>Área:</b> ${asHa(p.Ar)}` : "";
   return `<div class="PopupSubT"><b>Etapas de Crecimiento</b></div>${estatus}${area}`;
 };
@@ -45,7 +45,7 @@ const popupTizayuca = (p, ld) => {
           return `<b>Superficie:</b> ${asHa(p[k])}<br>`;
         }
         if (k === "Plazo") {
-          return `<b>${label}:</b> ${value}<p class="PopText"> Plazo</p><br>`;
+          return `<b>${escapeHtml(label)}:</b> ${escapeHtml(value)}<p class="PopText"> Plazo</p><br>`;
         }
         return undefined;
       },

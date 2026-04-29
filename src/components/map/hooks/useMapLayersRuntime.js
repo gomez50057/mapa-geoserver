@@ -90,12 +90,18 @@ async function waitForLayerReady(layer) {
     return;
   }
 
+  if (typeof layer.once !== "function") {
+    layer.__codexReady = true;
+    return;
+  }
+
   await new Promise((resolve) => {
     let settled = false;
     const cleanup = () => {
       clearTimeout(timeoutId);
       layer.off?.("load", handleDone);
       layer.off?.("tileerror", handleDone);
+      layer.off?.("tileabort", handleDone);
     };
     const handleDone = () => {
       if (settled) return;
@@ -104,9 +110,10 @@ async function waitForLayerReady(layer) {
       cleanup();
       resolve();
     };
-    const timeoutId = window.setTimeout(handleDone, 1800);
+    const timeoutId = window.setTimeout(handleDone, 900);
     layer.once?.("load", handleDone);
     layer.once?.("tileerror", handleDone);
+    layer.once?.("tileabort", handleDone);
   });
 }
 
@@ -117,6 +124,7 @@ export function useMapLayersRuntime({
   zMap,
   layerOpacityMap,
   onLayerStatusChange,
+  fallbackBounds = null,
 }) {
   const groupRef = useRef({});
   const paneRef = useRef({});
@@ -125,6 +133,7 @@ export function useMapLayersRuntime({
   const lastOnRef = useRef(new Set());
   const loadTokenRef = useRef(0);
   const visibleIdsRef = useRef(new Set());
+  const readyWaitersRef = useRef(new Set());
   const tileStateRef = useRef({});
   const mosaicStatusFrameRef = useRef(null);
   const [mosaicStatus, setMosaicStatus] = useState({
@@ -194,12 +203,14 @@ export function useMapLayersRuntime({
     (layerDef, layer) => {
       if (!layer || layer.__codexTileProgressBound) return;
 
-      const layerState = (tileStateRef.current[layerDef.id] = {
+      const layerState = tileStateRef.current[layerDef.id] || {};
+      Object.assign(layerState, {
         pendingTiles: 0,
         requestedTiles: 0,
         settledTiles: 0,
         isUpdating: false,
       });
+      tileStateRef.current[layerDef.id] = layerState;
 
       const updateState = (changes) => {
         Object.assign(layerState, changes);
@@ -260,10 +271,60 @@ export function useMapLayersRuntime({
           settledTiles: (layerState.settledTiles || 0) + 1,
         });
       });
+      layer.on("tileabort", (event) => {
+        const tile = event?.tile;
+        if (tile) {
+          tile.classList.remove("codex-tile-loading");
+        }
+
+        updateState({
+          pendingTiles: Math.max(0, (layerState.pendingTiles || 0) - 1),
+          settledTiles: (layerState.settledTiles || 0) + 1,
+        });
+      });
 
       layer.__codexTileProgressBound = true;
     },
     [syncMosaicStatus]
+  );
+
+  const resetTileLayerProgress = useCallback(
+    (layerId) => {
+      const layerState = tileStateRef.current[layerId] || {};
+      Object.assign(layerState, {
+        pendingTiles: 0,
+        requestedTiles: 0,
+        settledTiles: 0,
+        isUpdating: false,
+      });
+      tileStateRef.current[layerId] = layerState;
+      syncMosaicStatus();
+    },
+    [syncMosaicStatus]
+  );
+
+  const markLayerReadyWhenLoaded = useCallback(
+    (layerDef, layer) => {
+      if (!layer || layer.__codexReady || readyWaitersRef.current.has(layerDef.id)) return;
+
+      readyWaitersRef.current.add(layerDef.id);
+      waitForLayerReady(layer)
+        .then(() => {
+          readyWaitersRef.current.delete(layerDef.id);
+          if (!visibleIdsRef.current.has(layerDef.id)) return;
+          onLayerStatusChange(layerDef.id, { status: "ready", message: "" });
+          syncMosaicStatus();
+        })
+        .catch((error) => {
+          readyWaitersRef.current.delete(layerDef.id);
+          if (!visibleIdsRef.current.has(layerDef.id)) return;
+          onLayerStatusChange(layerDef.id, {
+            status: "error",
+            message: error?.message || "No se pudo cargar la capa",
+          });
+        });
+    },
+    [onLayerStatusChange, syncMosaicStatus]
   );
 
   useEffect(() => {
@@ -283,9 +344,13 @@ export function useMapLayersRuntime({
       Object.keys(groupRef.current).forEach((id) => {
         if (currentOn.has(id)) return;
         const layer = groupRef.current[id];
-        if (layer) hideLayer(layer);
+        if (layer) {
+          hideLayer(layer);
+          if (map.hasLayer(layer)) map.removeLayer(layer);
+        }
         visibleIdsRef.current.delete(id);
-        syncMosaicStatus();
+        readyWaitersRef.current.delete(id);
+        resetTileLayerProgress(id);
         onLayerStatusChange(id, { status: "idle", message: "" });
       });
 
@@ -315,10 +380,12 @@ export function useMapLayersRuntime({
             lastPaneRef.current[layerDef.id] = paneId;
             bindTileLayerProgress(layerDef, layer);
             layer.addTo(map);
-            await waitForLayerReady(layer);
+            markLayerReadyWhenLoaded(layerDef, layer);
             if (cancelled || token !== loadTokenRef.current) return;
           } else if (!map.hasLayer(layer)) {
+            resetTileLayerProgress(layerDef.id);
             layer.addTo(map);
+            markLayerReadyWhenLoaded(layerDef, layer);
           }
 
           showLayer(layer, opacity, z);
@@ -343,6 +410,10 @@ export function useMapLayersRuntime({
           });
           console.error(`Layer sync failed for ${layerDef.id}`, error);
         }
+      }
+
+      if (!unionBounds?.isValid?.() && newLayerIds.length > 0 && visibleDefs.length === 1 && fallbackBounds?.isValid?.()) {
+        unionBounds = fallbackBounds;
       }
 
       if (cancelled || token !== loadTokenRef.current || mapRef.current !== map || !map._loaded) {
@@ -378,10 +449,13 @@ export function useMapLayersRuntime({
     };
   }, [
     bindTileLayerProgress,
+    fallbackBounds,
     layerOpacityMap,
     mapReady,
     mapRef,
+    markLayerReadyWhenLoaded,
     onLayerStatusChange,
+    resetTileLayerProgress,
     syncMosaicStatus,
     visibleDefs,
     zMap,
@@ -394,6 +468,7 @@ export function useMapLayersRuntime({
     lastPaneRef.current = {};
     lastOnRef.current = new Set();
     visibleIdsRef.current = new Set();
+    readyWaitersRef.current = new Set();
     tileStateRef.current = {};
     if (mosaicStatusFrameRef.current) cancelAnimationFrame(mosaicStatusFrameRef.current);
   }, []);

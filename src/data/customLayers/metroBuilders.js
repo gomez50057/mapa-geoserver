@@ -1,5 +1,12 @@
 import L from "leaflet";
-import { asHa, fmtArea, fmtNum } from "./helpers";
+import { escapeHtml, fmtArea, fmtNum, sanitizeExternalUrl } from "./helpers";
+
+const safeText = (value, fallback = "—") => escapeHtml(value ?? fallback);
+const safeLink = (url, label) => {
+  const safeUrl = sanitizeExternalUrl(url);
+  if (!safeUrl) return "";
+  return `<a href='${escapeHtml(safeUrl)}' target='_blank' rel='noopener noreferrer'>${escapeHtml(label || "Consultar")}</a>`;
+};
 
 export function buildZMVM(data, paneId) {
   return L.geoJSON(data, {
@@ -16,8 +23,8 @@ export function buildZMVM(data, paneId) {
     onEachFeature: (feature, layer) => {
       const p = feature?.properties ?? {};
       const html =
-        `<div class='PopupT'>${p.NOM_ENT ?? "Entidad"}</div>` +
-        `<b>Nombre del Municipio:</b> ${p.NOM_MUN ?? "—"}` +
+        `<div class='PopupT'>${safeText(p.NOM_ENT, "Entidad")}</div>` +
+        `<b>Nombre del Municipio:</b> ${safeText(p.NOM_MUN)}` +
         `<br><b>Población Municipal:</b> ${fmtNum(p.POBMUN)}` +
         `<br><b>Mujeres:</b> ${fmtNum(p.POBFEM)}` +
         `<br><b>Hombres:</b> ${fmtNum(p.POBMAS)}` +
@@ -36,8 +43,8 @@ export function buildMetropolitana(data, paneId, fillColor, strokeColor, zonaLab
     onEachFeature: (feature, layer) => {
       const p = feature?.properties ?? {};
       let html =
-        `<div class='PopupT'><b>${zonaLabel} de</b> ${p.NO_Zona ?? "—"}</div>` +
-        `<b>Municipio:</b> ${p.NOM_MUN ?? "—"}` +
+        `<div class='PopupT'><b>${safeText(zonaLabel)} de</b> ${safeText(p.NO_Zona)}</div>` +
+        `<b>Municipio:</b> ${safeText(p.NOM_MUN)}` +
         `<br><b>Población Municipal:</b> ${fmtNum(p.POBMUN)}` +
         `<br><b>Mujeres:</b> ${fmtNum(p.POBFEM)}` +
         `<br><b>Hombres:</b> ${fmtNum(p.POBMAS)}` +
@@ -45,15 +52,18 @@ export function buildMetropolitana(data, paneId, fillColor, strokeColor, zonaLab
         `<br><b>Población Metropolitana:</b> ${fmtNum(p.POB_ESTATA)}` +
         `<div class='PopupSubT'><b>Instrumentos de Planeación</b></div>`;
       const PMDU = p.PMDU ?? "—";
-      if (PMDU !== "No existe" && p.LINKPMDU) {
-        html += `<b>PMDU:</b> <a href='${p.LINKPMDU}' target='_blank'>${p.NOM_LINK_P ?? "Consultar"}</a> <b>(${p.FECH ?? "—"})</b>`;
-      } else html += `<b>PMDU:</b> ${PMDU}`;
-      if (p.LINKPMD) html += `<br><b>PMD:</b> <a href='${p.LINKPMD}' target='_blank'><b>Consultar</b></a> <b>(${p.FECHPMD ?? "—"})</b>`;
+      const pmduLink = safeLink(p.LINKPMDU, p.NOM_LINK_P ?? "Consultar");
+      if (PMDU !== "No existe" && pmduLink) {
+        html += `<b>PMDU:</b> ${pmduLink} <b>(${safeText(p.FECH)})</b>`;
+      } else html += `<b>PMDU:</b> ${safeText(PMDU)}`;
+      const pmdLink = safeLink(p.LINKPMD, "Consultar");
+      if (pmdLink) html += `<br><b>PMD:</b> ${pmdLink} <b>(${safeText(p.FECHPMD)})</b>`;
       else html += `<br><b>PMD:</b> —`;
       const ATLAS = p.ATLAS ?? "—";
-      if (ATLAS !== "No existe" && p.LINKATLAS) {
-        html += `<br><b>Atlas de Riesgos:</b> <a href='${p.LINKATLAS}' target='_blank'><b>Consultar</b></a> <b>(${p.FECHATLAS ?? "—"})</b>`;
-      } else html += `<br><b>Atlas de Riesgos:</b> ${ATLAS}`;
+      const atlasLink = safeLink(p.LINKATLAS, "Consultar");
+      if (ATLAS !== "No existe" && atlasLink) {
+        html += `<br><b>Atlas de Riesgos:</b> ${atlasLink} <b>(${safeText(p.FECHATLAS)})</b>`;
+      } else html += `<br><b>Atlas de Riesgos:</b> ${safeText(ATLAS)}`;
       layer.bindPopup(html);
     },
   });
@@ -71,21 +81,24 @@ export function buildInfoHgoLayer({ data, paneId, color = "#fff", layerName }) {
       const PMDU = p.PMDU ?? "No existe";
       const ATLAS = p.ATLAS ?? "No existe";
       let html = `
-        <div class='PopupT'>${p.NOM_MUN || layerName || "Hidalgo"}</div>
-        <b>Población Municipal:</b> ${fmt(p.POBMUN)}
-        <br><b>Mujeres:</b> ${fmt(p.POBFEM)}
-        <br><b>Hombres:</b> ${fmt(p.POBMAS)}
-        <br><b>Superficie:</b> ${sup}
-        <br><b>Población Estatal:</b> ${fmt(p.POB_ESTATA)}
+        <div class='PopupT'>${safeText(p.NOM_MUN || layerName, "Hidalgo")}</div>
+        <b>Población Municipal:</b> ${safeText(fmt(p.POBMUN))}
+        <br><b>Mujeres:</b> ${safeText(fmt(p.POBFEM))}
+        <br><b>Hombres:</b> ${safeText(fmt(p.POBMAS))}
+        <br><b>Superficie:</b> ${safeText(sup)}
+        <br><b>Población Estatal:</b> ${safeText(fmt(p.POB_ESTATA))}
         <div class='PopupSubT'><b>Instrumentos de Planeación</b></div>
       `;
-      if (PMDU !== "No existe" && p.LINKPMDU) {
-        html += `<b>PMDU:</b> <a href='${p.LINKPMDU}' target='_blank'>${p.NOM_LINK_P ?? "Consultar"}</a> <b>(</b>${p.FECH ?? ""}<b>)</b>`;
-      } else html += `<b>PMDU:</b> ${PMDU}`;
-      if (p.LINKPMD) html += `<br><b>PMD:</b> <a href='${p.LINKPMD}' target='_blank'><b>Consultar</b></a> <b>(</b>${p.FECHPMD ?? ""}<b>)</b>`;
-      if (ATLAS !== "No existe" && p.LINKATLAS) {
-        html += `<br><b>Atlas de Riesgos:</b> <a href='${p.LINKATLAS}' target='_blank'><b>Consultar</b></a> <b>(</b>${p.FECHATLAS ?? ""}<b>)</b>`;
-      } else html += `<br><b>Atlas de Riesgos:</b> ${ATLAS}`;
+      const pmduLink = safeLink(p.LINKPMDU, p.NOM_LINK_P ?? "Consultar");
+      if (PMDU !== "No existe" && pmduLink) {
+        html += `<b>PMDU:</b> ${pmduLink} <b>(</b>${safeText(p.FECH, "")}<b>)</b>`;
+      } else html += `<b>PMDU:</b> ${safeText(PMDU)}`;
+      const pmdLink = safeLink(p.LINKPMD, "Consultar");
+      if (pmdLink) html += `<br><b>PMD:</b> ${pmdLink} <b>(</b>${safeText(p.FECHPMD, "")}<b>)</b>`;
+      const atlasLink = safeLink(p.LINKATLAS, "Consultar");
+      if (ATLAS !== "No existe" && atlasLink) {
+        html += `<br><b>Atlas de Riesgos:</b> ${atlasLink} <b>(</b>${safeText(p.FECHATLAS, "")}<b>)</b>`;
+      } else html += `<br><b>Atlas de Riesgos:</b> ${safeText(ATLAS)}`;
       layer.bindPopup(html);
       layer.on("click", (e) => layer.openPopup(e.latlng));
     },
@@ -113,13 +126,14 @@ export function buildEscPrivLayer({ data, paneId, layerDef }) {
       const muni = p.MUNICIPIO || p.municipio || "—";
       const cct = p.CCT || p.CLAVE || "—";
       const sitio = p.SITIO || p.WEB || p.URL;
-      layer.bindTooltip(`<div><b>${nombre}</b></div><div>Nivel: ${nivel}</div><div>Municipio: ${muni}</div>`, { sticky: true });
+      layer.bindTooltip(`<div><b>${safeText(nombre)}</b></div><div>Nivel: ${safeText(nivel)}</div><div>Municipio: ${safeText(muni)}</div>`, { sticky: true });
       layer.on("click", (e) => layer.openTooltip(e.latlng));
-      let html = `<div class='PopupT'>${nombre}</div>
-        <b>Nivel:</b> ${nivel}
-        <br><b>Municipio:</b> ${muni}
-        <br><b>CCT:</b> ${cct}`;
-      if (sitio) html += `<br><b>Sitio:</b> <a href='${sitio}' target='_blank'>${sitio}</a>`;
+      let html = `<div class='PopupT'>${safeText(nombre)}</div>
+        <b>Nivel:</b> ${safeText(nivel)}
+        <br><b>Municipio:</b> ${safeText(muni)}
+        <br><b>CCT:</b> ${safeText(cct)}`;
+      const sitioLink = safeLink(sitio, sitio);
+      if (sitioLink) html += `<br><b>Sitio:</b> ${sitioLink}`;
       layer.bindPopup(html);
     },
   });

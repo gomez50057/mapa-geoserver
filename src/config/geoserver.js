@@ -40,7 +40,7 @@ export const GEOSERVER_CONFIG = {
   queryBuffer: 10,
   overlayFormat: process.env.NEXT_PUBLIC_GEOSERVER_WMS_FORMAT || "image/png8",
   wmsTileSize: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_TILE_SIZE, 256),
-  wmsKeepBuffer: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_KEEP_BUFFER, 3),
+  wmsKeepBuffer: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_KEEP_BUFFER, 1),
   wmsUpdateInterval: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_INTERVAL, 90),
   wmsUpdateWhenIdle: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_IDLE, true),
   wmsUpdateWhenZooming: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_ZOOMING, false),

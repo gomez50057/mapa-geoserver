@@ -112,7 +112,7 @@ function ActiveTreeNode({
   onLayerOpacityChange,
   onManyLayerOpacityChange,
 }) {
-  const [open, setOpen] = useState(node.depth <= 1);
+  const [open, setOpen] = useState(true);
   const descendantIds = collectLayerIds(node);
   const branchHasChildren = node.children.length > 0;
   const branchHasLayers = node.layers.length > 0;

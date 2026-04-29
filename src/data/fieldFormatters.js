@@ -98,6 +98,22 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+export function sanitizeExternalUrl(value) {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) return "";
+
+  try {
+    const parsed = new URL(rawValue);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
 export function asNumber(value) {
   return typeof value === "number" ? value : Number(value);
 }
@@ -122,9 +138,10 @@ export function formatHectares(value) {
 export function formatValue(fieldName, value) {
   if (value == null || value === "") return DASH;
 
-  if (/^https?:\/\//i.test(String(value))) {
-    const url = escapeHtml(value);
-    return `<a href="${url}" target="_blank" rel="noreferrer">${url}</a>`;
+  const safeUrl = sanitizeExternalUrl(value);
+  if (safeUrl) {
+    const url = escapeHtml(safeUrl);
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
   }
 
   if (/^(SUPERFICIE|Superficie)$/i.test(fieldName)) return escapeHtml(formatHectares(value));

@@ -1,5 +1,30 @@
 import { getLegacyPopupFieldSet } from "../legacyPopupFields";
 
+export function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+export function sanitizeExternalUrl(value) {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) return "";
+
+  try {
+    const parsed = new URL(rawValue);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
 export const asNum = (v) => (typeof v === "number" ? v : Number(v));
 
 export const fmtHa = (v) => {
@@ -130,7 +155,7 @@ export function buildPopupHTML(
   layerDef
 ) {
   const title = (titleKeys.map((k) => p?.[k]).find(Boolean) || "").toString().toUpperCase();
-  let html = `<div class="PopupSubT"><b>${title}</b></div>`;
+  let html = `<div class="PopupSubT"><b>${escapeHtml(title)}</b></div>`;
 
   const omit = new Set([...BASE_OMIT, ...titleKeys, ...extraOmit].flatMap((key) => [key, String(key).toLowerCase()]));
   const allow = getLegacyPopupFieldSet(layerDef);
@@ -171,12 +196,12 @@ export function buildPopupHTML(
     }
 
     const displayValue = ensureFinalPeriod(label, value);
-    html += `<b>${label}:</b> ${displayValue}<br>`;
+    html += `<b>${escapeHtml(label)}:</b> ${escapeHtml(displayValue)}<br>`;
   }
 
   for (const [label, value] of Object.entries(consolidated)) {
     const displayValue = ensureFinalPeriod(label, value);
-    html += `<b>${label}:</b> ${displayValue}<br>`;
+    html += `<b>${escapeHtml(label)}:</b> ${escapeHtml(displayValue)}<br>`;
   }
 
   return html;

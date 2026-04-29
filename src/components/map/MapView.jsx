@@ -119,6 +119,7 @@ export default function MapView({
     zMap,
     layerOpacityMap,
     onLayerStatusChange,
+    fallbackBounds: FALLBACK_BOUNDS,
   });
 
   const {
@@ -315,7 +316,17 @@ export default function MapView({
         drawingEditHandlesRef.current = null;
       }
     };
-  }, [cleanupInteractions, cleanupLayersRuntime, handleResetMapState, openDrawingPanel, openExportPanel, openImportPanel]);
+  }, [
+    cleanupInteractions,
+    cleanupLayersRuntime,
+    drawingEditHandlesRef,
+    drawingLayerGroupRef,
+    drawingPreviewGroupRef,
+    handleResetMapState,
+    openDrawingPanel,
+    openExportPanel,
+    openImportPanel,
+  ]);
 
   return (
     <div

@@ -22,5 +22,9 @@
     "baseline-browser-mapping": "^2.10.24",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4"
+  },
+  "overrides": {
+    "dompurify": "^3.4.0",
+    "postcss": "^8.5.10"
   }
 }

@@ -6,6 +6,7 @@ import {
   getProp,
   renderSectionSubtitle,
   renderSectionTitle,
+  sanitizeExternalUrl,
 } from "./helpers";
 
 function renderInstrumentLinks(properties) {
@@ -14,8 +15,9 @@ function renderInstrumentLinks(properties) {
   const pmdLabel = getProp(properties, "NOM_LINK_1", "nom_link_1") || "Consultar";
 
   const renderLink = (label, url, fallback, year) => {
-    if (!url || url === "No aplica") return `<div><b>${escapeHtml(label)}:</b> ${escapeHtml(fallback || "No existe")}</div>`;
-    return `<div><b>${escapeHtml(label)}:</b> <a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(fallback)}</a>${year ? ` <b>(${escapeHtml(year)})</b>` : ""}</div>`;
+    const safeUrl = sanitizeExternalUrl(url);
+    if (!safeUrl || url === "No aplica") return `<div><b>${escapeHtml(label)}:</b> ${escapeHtml(fallback || "No existe")}</div>`;
+    return `<div><b>${escapeHtml(label)}:</b> <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fallback)}</a>${year ? ` <b>(${escapeHtml(year)})</b>` : ""}</div>`;
   };
 
   return [
@@ -63,11 +65,12 @@ export function renderZonaMetropolitana(properties, layerDef) {
 export function renderEscuelaPrivada(properties, layerDef) {
   const title = firstDefined(getProp(properties, "NOMBRE", "nombre"), layerDef?.title, layerDef?.name, "Escuela privada");
   const sitio = firstDefined(getProp(properties, "SITIO", "sitio"), getProp(properties, "WEB", "web"), getProp(properties, "URL", "url"));
+  const safeSitio = sanitizeExternalUrl(sitio);
   return [
     renderSectionTitle(title),
     `<div><b>Nivel:</b> ${escapeHtml(firstDefined(getProp(properties, "NIVEL", "nivel"), "—"))}</div>`,
     `<div><b>Municipio:</b> ${escapeHtml(firstDefined(getProp(properties, "MUNICIPIO", "municipio"), "—"))}</div>`,
     `<div><b>CCT:</b> ${escapeHtml(firstDefined(getProp(properties, "CCT", "cct"), getProp(properties, "CLAVE", "clave"), "—"))}</div>`,
-    sitio ? `<div><b>Sitio:</b> <a href="${escapeHtml(sitio)}" target="_blank" rel="noreferrer">${escapeHtml(sitio)}</a></div>` : "",
+    safeSitio ? `<div><b>Sitio:</b> <a href="${escapeHtml(safeSitio)}" target="_blank" rel="noopener noreferrer">${escapeHtml(safeSitio)}</a></div>` : "",
   ].join("");
 }
