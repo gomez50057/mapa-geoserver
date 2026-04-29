@@ -10,7 +10,7 @@ import ExportPdfPanel from "./ExportPdfPanel";
 import MapContextMenu from "./MapContextMenu";
 import MapSearchBar from "./MapSearchBar";
 import { addMapControls } from "./utils/controls";
-import { GEOSERVER_CONFIG, HIDALGO_REGION_BOUNDS } from "@/config/geoserver";
+import { HIDALGO_REGION_BOUNDS } from "@/config/geoserver";
 import { IMPORT_LAYER_PANE } from "./utils/importUtils";
 import { DRAW_LAYER_PANE, DRAW_PREVIEW_PANE } from "./utils/drawingUtils";
 import { useImportedLayer } from "./hooks/useImportedLayer";
@@ -68,28 +68,22 @@ export default function MapView({
   const [searchMode, setSearchMode] = useState("layers");
 
   const queryableDefs = useMemo(
-    () => {
-      if (!GEOSERVER_CONFIG.remoteQueriesEnabled) return [];
-
-      return [...selectedLayers]
+    () =>
+      [...selectedLayers]
         .filter((layer) => getLayerOpacity(layer, layerOpacityMap) > 0.01)
         .filter((layer) => layerLoadState[layer.id]?.status === "ready")
         .filter((layer) => layer.queryMode !== "none")
-        .sort((a, b) => getLayerZ(b, zMap) - getLayerZ(a, zMap));
-    },
+        .sort((a, b) => getLayerZ(b, zMap) - getLayerZ(a, zMap)),
     [layerLoadState, layerOpacityMap, selectedLayers, zMap]
   );
 
   const hoverableDefs = useMemo(
-    () => {
-      if (!GEOSERVER_CONFIG.remoteQueriesEnabled) return [];
-
-      return [...selectedLayers]
+    () =>
+      [...selectedLayers]
         .filter((layer) => getLayerOpacity(layer, layerOpacityMap) > 0.01)
         .filter((layer) => layerLoadState[layer.id]?.status === "ready")
         .filter((layer) => layer.hoverMode && layer.hoverMode !== "none")
-        .sort((a, b) => getLayerZ(b, zMap) - getLayerZ(a, zMap));
-    },
+        .sort((a, b) => getLayerZ(b, zMap) - getLayerZ(a, zMap)),
     [layerLoadState, layerOpacityMap, selectedLayers, zMap]
   );
 

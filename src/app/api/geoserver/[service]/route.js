@@ -11,6 +11,9 @@ const SERVICE_TARGETS = {
     "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs",
 };
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 function buildUpstreamUrl(service, requestUrl) {
   const target = SERVICE_TARGETS[service];
   if (!target) return null;
@@ -24,6 +27,21 @@ function buildUpstreamUrl(service, requestUrl) {
   return upstream.toString();
 }
 
+function buildCorsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Accept, Content-Type",
+  };
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: buildCorsHeaders(),
+  });
+}
+
 export async function GET(request, context) {
   const params = await context?.params;
   const service = params?.service;
@@ -32,31 +50,38 @@ export async function GET(request, context) {
     return new Response("Unsupported GeoServer service", { status: 404 });
   }
 
-  const upstream = await fetch(upstreamUrl, {
-    method: "GET",
-    headers: {
-      Accept: request.headers.get("accept") || "*/*",
-    },
-    ...(service === "tilewms" ? {} : { cache: "no-store" }),
-  });
+  try {
+    const upstream = await fetch(upstreamUrl, {
+      method: "GET",
+      headers: {
+        Accept: request.headers.get("accept") || "*/*",
+      },
+      cache: "no-store",
+    });
 
-  const headers = new Headers();
-  [
-    "content-type",
-    "cache-control",
-    "etag",
-    "last-modified",
-    "expires",
-    "vary",
-    "content-length",
-  ].forEach((headerName) => {
-    const value = upstream.headers.get(headerName);
-    if (value) headers.set(headerName, value);
-  });
+    const headers = new Headers(buildCorsHeaders());
+    ["content-type", "cache-control", "etag", "last-modified", "expires", "vary"].forEach((headerName) => {
+      const value = upstream.headers.get(headerName);
+      if (value) headers.set(headerName, value);
+    });
 
-  return new Response(upstream.body, {
-    status: upstream.status,
-    statusText: upstream.statusText,
-    headers,
-  });
+    const body = await upstream.arrayBuffer();
+    return new Response(body, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers,
+    });
+  } catch (error) {
+    console.error("GeoServer proxy failed", { service, upstreamUrl, error });
+    return Response.json(
+      {
+        message: "GeoServer proxy failed",
+        service,
+      },
+      {
+        status: 502,
+        headers: buildCorsHeaders(),
+      }
+    );
+  }
 }

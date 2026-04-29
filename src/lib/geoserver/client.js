@@ -117,7 +117,7 @@ function buildFeatureInfoUrl(map, latlng, layerDefs) {
   const qualifiedLayers = definitions.map(buildQualifiedLayerName);
   const styles = definitions.map((layerDef) => layerDef.wmsStyleName || "").join(",");
 
-  return buildServiceUrl(GEOSERVER_CONFIG.wmsUrl, {
+  return buildServiceUrl(GEOSERVER_CONFIG.queryWmsUrl, {
     service: "WMS",
     request: "GetFeatureInfo",
     version: GEOSERVER_CONFIG.wmsVersion,
@@ -216,7 +216,7 @@ export async function fetchWfsFeatures(layerDef, options = {}) {
   if (options.maxFeatures) params.maxFeatures = options.maxFeatures;
   if (options.bbox) params.bbox = options.bbox;
 
-  const requestUrl = buildServiceUrl(GEOSERVER_CONFIG.wfsUrl, params);
+  const requestUrl = buildServiceUrl(GEOSERVER_CONFIG.queryWfsUrl, params);
   const cacheKey = requestUrl;
 
   if (wfsResponseCache.has(cacheKey)) {
@@ -299,7 +299,7 @@ function parseBoundsFromLayerNode(layerNode) {
 async function fetchWmsCapabilities() {
   if (wmsCapabilitiesPromise) return wmsCapabilitiesPromise;
 
-  const requestUrl = buildServiceUrl(GEOSERVER_CONFIG.wmsUrl, {
+  const requestUrl = buildServiceUrl(GEOSERVER_CONFIG.queryWmsUrl, {
     service: "WMS",
     request: "GetCapabilities",
     version: GEOSERVER_CONFIG.wmsVersion,
