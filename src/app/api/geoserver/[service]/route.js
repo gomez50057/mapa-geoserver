@@ -11,11 +11,12 @@ const SERVICE_TARGETS = {
     "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs",
 };
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const MAX_QUERY_LENGTH = 8000;
-const UPSTREAM_TIMEOUT_MS = 12000;
+const UPSTREAM_TIMEOUT_MS = 25000;
 const ALLOWED_SERVICES = new Set(["tilewms", "wms", "wfs"]);
 const ALLOWED_REQUESTS = {
   tilewms: new Set(["getcapabilities", "getmap", "getfeatureinfo", "getlegendgraphic"]),
@@ -131,6 +132,16 @@ function buildCorsHeaders() {
   };
 }
 
+function buildUpstreamHeaders(request) {
+  const accept = request.headers.get("accept") || "*/*";
+  return {
+    Accept: accept,
+    "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36",
+  };
+}
+
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
@@ -155,9 +166,7 @@ export async function GET(request, context) {
   try {
     const upstream = await fetch(upstreamTarget.url, {
       method: "GET",
-      headers: {
-        Accept: request.headers.get("accept") || "*/*",
-      },
+      headers: buildUpstreamHeaders(request),
       cache: "no-store",
       signal: abortController.signal,
     });

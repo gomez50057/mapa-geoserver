@@ -45,7 +45,7 @@ export const GEOSERVER_CONFIG = {
   wmsUpdateWhenIdle: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_IDLE, true),
   wmsUpdateWhenZooming: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_ZOOMING, false),
   wmsCrossOrigin: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_CROSS_ORIGIN, false),
-  capabilitiesBoundsEnabled: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_ENABLE_CAPABILITIES_BOUNDS, true),
+  capabilitiesBoundsEnabled: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_ENABLE_CAPABILITIES_BOUNDS, false),
   hoverDebounceMs: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_HOVER_DEBOUNCE_MS, 180),
   interactionResumeDelayMs: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_INTERACTION_RESUME_DELAY_MS, 180),
 };
