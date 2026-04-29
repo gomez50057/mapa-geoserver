@@ -12,7 +12,7 @@ export default function WorkflowSection() {
     <section id="consulta" className={styles.section} aria-labelledby="workflow-title">
       <div className={styles.heading}>
         <p>Ruta de consulta</p>
-        <h2 id="workflow-title">Del mapa al dato descargable.</h2>
+        <h2 id="workflow-title">Del mapa al dato descargable</h2>
       </div>
 
       <div className={styles.steps}>

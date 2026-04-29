@@ -15,9 +15,15 @@ export const HIDALGO_REGION_BOUNDS = [
 ];
 
 export const GEOSERVER_CONFIG = {
-  wmsUrl: trimTrailingSlash(process.env.NEXT_PUBLIC_GEOSERVER_WMS_URL || "/api/geoserver/wms"),
-  tileWmsUrl: trimTrailingSlash(process.env.NEXT_PUBLIC_GEOSERVER_TILE_WMS_URL || "/api/geoserver/tilewms"),
-  wfsUrl: trimTrailingSlash(process.env.NEXT_PUBLIC_GEOSERVER_WFS_URL || "/api/geoserver/wfs"),
+  wmsUrl: trimTrailingSlash(
+    process.env.NEXT_PUBLIC_GEOSERVER_WMS_URL || "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wms"
+  ),
+  tileWmsUrl: trimTrailingSlash(
+    process.env.NEXT_PUBLIC_GEOSERVER_TILE_WMS_URL || "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wms"
+  ),
+  wfsUrl: trimTrailingSlash(
+    process.env.NEXT_PUBLIC_GEOSERVER_WFS_URL || "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs"
+  ),
   workspace: process.env.NEXT_PUBLIC_GEOSERVER_WORKSPACE || "mapa",
   localFallbackEnabled: process.env.NEXT_PUBLIC_ENABLE_LOCAL_LAYER_FALLBACK === "true",
   regionBounds: HIDALGO_REGION_BOUNDS,
@@ -36,6 +42,8 @@ export const GEOSERVER_CONFIG = {
   wmsUpdateInterval: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_INTERVAL, 90),
   wmsUpdateWhenIdle: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_IDLE, true),
   wmsUpdateWhenZooming: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_UPDATE_WHEN_ZOOMING, false),
+  wmsCrossOrigin: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_WMS_CROSS_ORIGIN, false),
+  capabilitiesBoundsEnabled: booleanOr(process.env.NEXT_PUBLIC_GEOSERVER_ENABLE_CAPABILITIES_BOUNDS, false),
   hoverDebounceMs: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_HOVER_DEBOUNCE_MS, 180),
   interactionResumeDelayMs: numberOr(process.env.NEXT_PUBLIC_GEOSERVER_INTERACTION_RESUME_DELAY_MS, 180),
 };

@@ -53,7 +53,7 @@ export default function ImpactSection() {
     <section id="territorio" className={styles.section} aria-labelledby="impact-title">
       <div className={styles.copy}>
         <p>Consulta pública y técnica</p>
-        <h2 id="impact-title">Un punto de entrada para leer el territorio con capas confiables.</h2>
+        <h2 id="impact-title">Un punto de entrada para leer el territorio con capas confiables</h2>
         <span>
           La plataforma concentra información territorial para localizar, contrastar y revisar instrumentos con una experiencia clara en escritorio, tableta y móvil.
         </span>

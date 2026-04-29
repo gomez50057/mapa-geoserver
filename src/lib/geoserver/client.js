@@ -91,7 +91,7 @@ export function createWmsLayer(layerDef, paneId, zIndex) {
     updateWhenZooming: GEOSERVER_CONFIG.wmsUpdateWhenZooming,
     updateInterval: GEOSERVER_CONFIG.wmsUpdateInterval,
     detectRetina: false,
-    crossOrigin: true,
+    crossOrigin: GEOSERVER_CONFIG.wmsCrossOrigin ? "anonymous" : false,
     className: "geoserver-wms-layer",
     pane: paneId,
     zIndex,
