@@ -6,8 +6,10 @@ import { renderPopupContent } from "@/data/popupSchemas";
 const wfsResponseCache = new Map();
 const wfsPendingRequests = new Map();
 const wmsBoundsCache = new Map();
+const localFeatureBoundsCache = new WeakMap();
 let wmsCapabilitiesPromise = null;
 let wmsCapabilitiesFailed = false;
+let localGeoJsonRegistryPromise = null;
 
 const PROPERTY_ALIAS_MAP = {
   id: "ID",
@@ -165,10 +167,232 @@ function inferLayerDefFromFeature(feature, layerDefs) {
   );
 }
 
+async function getLocalGeoJsonRegistry() {
+  if (!localGeoJsonRegistryPromise) {
+    localGeoJsonRegistryPromise = Promise.all([
+      import("@/data/geojson"),
+      import("@/data/customLayers/layerIds"),
+    ]).then(([{ GEOJSON_REGISTRY }]) => GEOJSON_REGISTRY);
+  }
+
+  return localGeoJsonRegistryPromise;
+}
+
+async function resolveLocalFeatureCollection(layerDef) {
+  const registry = await getLocalGeoJsonRegistry();
+  const candidates = [
+    layerDef?.legacyGeojsonId,
+    layerDef?.geojsonId,
+    layerDef?.id,
+    layerDef?.layerName,
+    buildQualifiedLayerName(layerDef),
+  ].filter(Boolean);
+
+  return candidates.map((key) => registry[key]).find((collection) => Array.isArray(collection?.features)) || null;
+}
+
+function extendCoordinateBounds(value, bounds) {
+  if (!Array.isArray(value)) return bounds;
+
+  if (typeof value[0] === "number" && typeof value[1] === "number") {
+    const [lng, lat] = value;
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return bounds;
+    bounds.minLng = Math.min(bounds.minLng, lng);
+    bounds.maxLng = Math.max(bounds.maxLng, lng);
+    bounds.minLat = Math.min(bounds.minLat, lat);
+    bounds.maxLat = Math.max(bounds.maxLat, lat);
+    return bounds;
+  }
+
+  value.forEach((item) => extendCoordinateBounds(item, bounds));
+  return bounds;
+}
+
+function getFeatureCoordinateBounds(feature) {
+  if (!feature || typeof feature !== "object") return null;
+  if (localFeatureBoundsCache.has(feature)) return localFeatureBoundsCache.get(feature);
+
+  const bounds = extendCoordinateBounds(feature.geometry?.coordinates, {
+    minLng: Infinity,
+    minLat: Infinity,
+    maxLng: -Infinity,
+    maxLat: -Infinity,
+  });
+
+  const result = [bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat].every(Number.isFinite) ? bounds : null;
+  localFeatureBoundsCache.set(feature, result);
+  return result;
+}
+
+function getQueryTolerance(map, latlng) {
+  const buffer = Number(GEOSERVER_CONFIG.queryBuffer) || 10;
+  const point = map.latLngToContainerPoint(latlng);
+  const east = map.containerPointToLatLng(L.point(point.x + buffer, point.y));
+  const south = map.containerPointToLatLng(L.point(point.x, point.y + buffer));
+
+  return {
+    pixels: buffer,
+    lng: Math.max(Math.abs(east.lng - latlng.lng), 0.000001),
+    lat: Math.max(Math.abs(south.lat - latlng.lat), 0.000001),
+  };
+}
+
+function featureBoundsMayContain(bounds, latlng, tolerance) {
+  if (!bounds) return true;
+  return (
+    latlng.lng >= bounds.minLng - tolerance.lng &&
+    latlng.lng <= bounds.maxLng + tolerance.lng &&
+    latlng.lat >= bounds.minLat - tolerance.lat &&
+    latlng.lat <= bounds.maxLat + tolerance.lat
+  );
+}
+
+function pointInRing(point, ring) {
+  const [lng, lat] = point;
+  let inside = false;
+
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const intersects = yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi || Number.EPSILON) + xi;
+    if (intersects) inside = !inside;
+  }
+
+  return inside;
+}
+
+function pointInPolygonCoordinates(point, polygon) {
+  if (!Array.isArray(polygon?.[0]) || !pointInRing(point, polygon[0])) return false;
+  return !polygon.slice(1).some((ring) => pointInRing(point, ring));
+}
+
+function distanceToSegment(point, start, end) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  if (dx === 0 && dy === 0) return point.distanceTo(start);
+
+  const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)));
+  return point.distanceTo(L.point(start.x + t * dx, start.y + t * dy));
+}
+
+function coordinateToPoint(map, coordinate) {
+  return map.latLngToContainerPoint(L.latLng(coordinate[1], coordinate[0]));
+}
+
+function lineCoordinatesHit(map, clickPoint, coordinates, bufferPixels) {
+  if (!Array.isArray(coordinates) || coordinates.length === 0) return false;
+  if (coordinates.length === 1) return clickPoint.distanceTo(coordinateToPoint(map, coordinates[0])) <= bufferPixels;
+
+  for (let index = 1; index < coordinates.length; index += 1) {
+    const start = coordinateToPoint(map, coordinates[index - 1]);
+    const end = coordinateToPoint(map, coordinates[index]);
+    if (distanceToSegment(clickPoint, start, end) <= bufferPixels) return true;
+  }
+
+  return false;
+}
+
+function pointCoordinatesHit(map, clickPoint, coordinate, bufferPixels) {
+  return clickPoint.distanceTo(coordinateToPoint(map, coordinate)) <= bufferPixels;
+}
+
+function geometryContainsLatLng(map, geometry, latlng, tolerance) {
+  if (!geometry) return false;
+
+  const clickPoint = map.latLngToContainerPoint(latlng);
+  const queryPoint = [latlng.lng, latlng.lat];
+
+  switch (geometry.type) {
+    case "Point":
+      return pointCoordinatesHit(map, clickPoint, geometry.coordinates, tolerance.pixels);
+    case "MultiPoint":
+      return geometry.coordinates.some((coordinate) => pointCoordinatesHit(map, clickPoint, coordinate, tolerance.pixels));
+    case "LineString":
+      return lineCoordinatesHit(map, clickPoint, geometry.coordinates, tolerance.pixels);
+    case "MultiLineString":
+      return geometry.coordinates.some((line) => lineCoordinatesHit(map, clickPoint, line, tolerance.pixels));
+    case "Polygon":
+      return pointInPolygonCoordinates(queryPoint, geometry.coordinates);
+    case "MultiPolygon":
+      return geometry.coordinates.some((polygon) => pointInPolygonCoordinates(queryPoint, polygon));
+    case "GeometryCollection":
+      return geometry.geometries?.some((item) => geometryContainsLatLng(map, item, latlng, tolerance)) || false;
+    default:
+      return false;
+  }
+}
+
+function buildLocalFeature(feature, layerDef, index) {
+  const qualifiedName = buildQualifiedLayerName(layerDef);
+  const properties = {
+    ...(feature?.properties || {}),
+    layer: feature?.properties?.layer || qualifiedName,
+    typename: feature?.properties?.typename || qualifiedName,
+  };
+
+  return normalizeFeature({
+    ...feature,
+    id: feature?.id || `${qualifiedName}.${index}`,
+    properties,
+  });
+}
+
+async function queryLocalFeatureInfo(map, latlng, layerDefs) {
+  const definitions = Array.isArray(layerDefs) ? layerDefs.filter(Boolean) : [layerDefs].filter(Boolean);
+  if (definitions.length === 0) return { result: null, coveredLayerIds: new Set(), allCovered: false };
+
+  const layers = await Promise.all(
+    definitions.map(async (layerDef) => ({
+      layerDef,
+      collection: await resolveLocalFeatureCollection(layerDef),
+    }))
+  );
+
+  const localLayers = layers.filter(({ collection }) => collection);
+  const coveredLayerIds = new Set(localLayers.map(({ layerDef }) => layerDef.id));
+  if (localLayers.length === 0) return { result: null, coveredLayerIds, allCovered: false };
+
+  const tolerance = getQueryTolerance(map, latlng);
+
+  for (const { layerDef, collection } of localLayers) {
+    const features = [];
+    collection.features.forEach((feature, index) => {
+      const bounds = getFeatureCoordinateBounds(feature);
+      if (!featureBoundsMayContain(bounds, latlng, tolerance)) return;
+      if (geometryContainsLatLng(map, feature.geometry, latlng, tolerance)) {
+        features.push(buildLocalFeature(feature, layerDef, index));
+      }
+    });
+
+    if (features.length > 0) {
+      const normalized = normalizeFeatureInfoPayload({
+        type: "FeatureCollection",
+        features,
+      });
+
+      return {
+        result: {
+          feature: normalized.features[0],
+          layerDef,
+          collection: normalized,
+        },
+        coveredLayerIds,
+        allCovered: localLayers.length === definitions.length,
+      };
+    }
+  }
+
+  return { result: null, coveredLayerIds, allCovered: localLayers.length === definitions.length };
+}
+
 export async function fetchFeatureInfo(map, latlng, layerDef, options = {}) {
+  const local = await queryLocalFeatureInfo(map, latlng, layerDef);
+  if (local.result) return local.result.collection;
+  if (local.allCovered) return { features: [] };
+
   const url = buildFeatureInfoUrl(map, latlng, layerDef);
   const response = await fetch(url, { signal: options.signal });
-  if (!response.ok) throw new Error(`GetFeatureInfo failed for ${layerDef.id}`);
+  if (!response.ok) return { features: [] };
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
@@ -183,9 +407,16 @@ export async function fetchCombinedFeatureInfo(map, latlng, layerDefs, options =
   const definitions = Array.isArray(layerDefs) ? layerDefs.filter(Boolean) : [];
   if (definitions.length === 0) return null;
 
-  const url = buildFeatureInfoUrl(map, latlng, definitions);
+  const local = await queryLocalFeatureInfo(map, latlng, definitions);
+  if (local.result) return local.result;
+  if (local.allCovered) return null;
+
+  const remoteDefinitions = definitions.filter((layerDef) => !local.coveredLayerIds.has(layerDef.id));
+  if (remoteDefinitions.length === 0) return null;
+
+  const url = buildFeatureInfoUrl(map, latlng, remoteDefinitions);
   const response = await fetch(url, { signal: options.signal });
-  if (!response.ok) throw new Error("Combined GetFeatureInfo failed");
+  if (!response.ok) return null;
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
@@ -199,7 +430,7 @@ export async function fetchCombinedFeatureInfo(map, latlng, layerDefs, options =
 
   return {
     feature,
-    layerDef: inferLayerDefFromFeature(feature, definitions),
+    layerDef: inferLayerDefFromFeature(feature, remoteDefinitions),
     collection: normalized,
   };
 }
