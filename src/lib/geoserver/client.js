@@ -7,6 +7,7 @@ const wfsResponseCache = new Map();
 const wfsPendingRequests = new Map();
 const wmsBoundsCache = new Map();
 let wmsCapabilitiesPromise = null;
+let wmsCapabilitiesFailed = false;
 
 const PROPERTY_ALIAS_MAP = {
   id: "ID",
@@ -297,6 +298,7 @@ function parseBoundsFromLayerNode(layerNode) {
 }
 
 async function fetchWmsCapabilities() {
+  if (wmsCapabilitiesFailed) return null;
   if (wmsCapabilitiesPromise) return wmsCapabilitiesPromise;
 
   const requestUrl = buildServiceUrl(GEOSERVER_CONFIG.queryWmsUrl, {
@@ -314,6 +316,7 @@ async function fetchWmsCapabilities() {
     })
     .catch((error) => {
       wmsCapabilitiesPromise = null;
+      wmsCapabilitiesFailed = true;
       throw error;
     });
 
@@ -327,6 +330,7 @@ export async function fetchLayerBounds(layerDef) {
   }
 
   const capabilities = await fetchWmsCapabilities();
+  if (!capabilities) return null;
   const layerNodes = Array.from(capabilities.getElementsByTagName("Layer") || []);
   const match = layerNodes.find((node) => {
     const name = getFirstTagText(node, ["Name"]);

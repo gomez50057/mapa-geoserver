@@ -20,7 +20,7 @@ export async function resolveLayerBounds({
   if (configuredBounds) return configuredBounds;
 
   const cacheKey = layerDef.id;
-  if (boundsCache.current[cacheKey]) return boundsCache.current[cacheKey];
+  if (cacheKey in boundsCache.current) return boundsCache.current[cacheKey] || null;
 
   if (layerDef.boundsMode === "capabilities" && GEOSERVER_CONFIG.capabilitiesBoundsEnabled) {
     try {
@@ -34,5 +34,6 @@ export async function resolveLayerBounds({
     }
   }
 
+  boundsCache.current[cacheKey] = null;
   return null;
 }

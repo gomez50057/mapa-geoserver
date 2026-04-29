@@ -11,7 +11,7 @@ const SERVICE_TARGETS = {
     "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs",
 };
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
