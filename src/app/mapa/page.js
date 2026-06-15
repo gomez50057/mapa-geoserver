@@ -30,6 +30,7 @@ export default function MapaPage() {
 
   const [layerLoadState, setLayerLoadState] = useState({});
   const [layerSearchQuery, setLayerSearchQuery] = useState("");
+  const [focusRequest, setFocusRequest] = useState(null);
 
   const onLayerStatusChange = useCallback((layerId, nextState) => {
     setLayerLoadState((previous) => {
@@ -83,6 +84,38 @@ export default function MapaPage() {
     [layerSearchQuery]
   );
 
+  const handleToggleLayer = useCallback(
+    (layer) => {
+      const isTurningOn = !selectedIds.has(layer.id);
+      onToggleLayer(layer);
+
+      if (!isTurningOn) return;
+      setFocusRequest({
+        nonce: Date.now(),
+        layerIds: [layer.id],
+      });
+    },
+    [onToggleLayer, selectedIds]
+  );
+
+  const handleToggleMany = useCallback(
+    (layers, nextOn) => {
+      onToggleMany(layers, nextOn);
+      if (!nextOn) return;
+
+      const newLayerIds = layers
+        .filter((layer) => !selectedIds.has(layer.id))
+        .map((layer) => layer.id);
+
+      if (newLayerIds.length === 0) return;
+      setFocusRequest({
+        nonce: Date.now(),
+        layerIds: newLayerIds,
+      });
+    },
+    [onToggleMany, selectedIds]
+  );
+
   return (
     <div className={styles.layout}>
       <Link className={styles.homeLink} href="/" aria-label="Regresar a la página principal">
@@ -96,8 +129,8 @@ export default function MapaPage() {
         tree={LAYERS_TREE}
         searchQuery={layerSearchQuery}
         selected={selectedIds}
-        onToggle={onToggleLayer}
-        onToggleMany={onToggleMany}
+        onToggle={handleToggleLayer}
+        onToggleMany={handleToggleMany}
         onZUp={(id, fast) => bumpZ(id, fast ? 500 : 100)}
         onZDown={(id, fast) => bumpZ(id, fast ? -500 : -100)}
         onZTop={moveTop}
@@ -119,6 +152,7 @@ export default function MapaPage() {
         layerLoadState={layerLoadState}
         loadingSummary={loadingSummary}
         onLayerStatusChange={onLayerStatusChange}
+        focusRequest={focusRequest}
         onLayerOpacityChange={setLayerOpacity}
         onManyLayerOpacityChange={setManyLayerOpacity}
         onResetLayers={resetToDefaults}

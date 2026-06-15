@@ -3,6 +3,9 @@ const SERVICE_TARGETS = {
     process.env.GEOSERVER_REMOTE_TILE_WMS_URL ||
     process.env.GEOSERVER_REMOTE_WMS_URL ||
     "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wms",
+  wmts:
+    process.env.GEOSERVER_REMOTE_WMTS_URL ||
+    "https://metropoli.hidalgo.gob.mx/geoserver/gwc/service/wmts",
   wms:
     process.env.GEOSERVER_REMOTE_WMS_URL ||
     "https://metropoli.hidalgo.gob.mx/geoserver/mapa/wms",
@@ -17,34 +20,55 @@ export const maxDuration = 30;
 
 const MAX_QUERY_LENGTH = 8000;
 const UPSTREAM_TIMEOUT_MS = 25000;
-const ALLOWED_SERVICES = new Set(["tilewms", "wms", "wfs"]);
+const WMTS_TILE_CACHE_CONTROL = "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000";
+const WMS_TILE_CACHE_CONTROL = "public, max-age=900, s-maxage=3600, stale-while-revalidate=86400";
+const DYNAMIC_TILE_CACHE_CONTROL = "public, max-age=60, s-maxage=300, stale-while-revalidate=3600";
+const METADATA_CACHE_CONTROL = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800";
+const DYNAMIC_CACHE_CONTROL = "no-store";
+const ALLOWED_SERVICES = new Set(["tilewms", "wmts", "wms", "wfs"]);
 const ALLOWED_REQUESTS = {
   tilewms: new Set(["getcapabilities", "getmap", "getfeatureinfo", "getlegendgraphic"]),
+  wmts: new Set(["getcapabilities", "gettile"]),
   wms: new Set(["getcapabilities", "getmap", "getfeatureinfo", "getlegendgraphic"]),
   wfs: new Set(["getcapabilities", "describefeaturetype", "getfeature"]),
 };
 const ALLOWED_QUERY_PARAMS = new Set([
   "bbox",
   "buffer",
+  "cachekey",
+  "cql_filter",
+  "env",
   "exceptions",
+  "elevation",
   "feature_count",
+  "filter",
   "format",
   "height",
   "info_format",
+  "layer",
   "layers",
   "maxfeatures",
   "outputformat",
+  "propertyname",
   "query_layers",
   "request",
   "service",
+  "sortby",
   "srs",
   "srsname",
+  "style",
   "styles",
+  "tilecol",
+  "tilematrix",
+  "tilematrixset",
+  "tilerow",
   "tiled",
   "tilesorigin",
+  "time",
   "transparent",
   "typename",
   "typenames",
+  "viewparams",
   "version",
   "width",
   "x",
@@ -68,7 +92,7 @@ function parseLayerNames(value) {
 }
 
 function validateLayerNames(searchParams) {
-  const layerParamNames = ["layers", "query_layers", "typename", "typenames"];
+  const layerParamNames = ["layer", "layers", "query_layers", "typename", "typenames"];
   for (const paramName of layerParamNames) {
     const value = getSearchParamCaseInsensitive(searchParams, paramName);
     if (!value) continue;
@@ -78,6 +102,11 @@ function validateLayerNames(searchParams) {
     }
   }
   return true;
+}
+
+function hasDynamicRenderParams(searchParams) {
+  const dynamicParamNames = ["cql_filter", "env", "elevation", "filter", "time", "viewparams"];
+  return dynamicParamNames.some((paramName) => getSearchParamCaseInsensitive(searchParams, paramName));
 }
 
 function validateIncomingRequest(service, incoming) {
@@ -104,7 +133,7 @@ function validateIncomingRequest(service, incoming) {
     return { ok: false, status: 400, message: "Invalid GeoServer layer name" };
   }
 
-  return { ok: true };
+  return { ok: true, requestType };
 }
 
 function buildUpstreamUrl(service, requestUrl) {
@@ -120,7 +149,12 @@ function buildUpstreamUrl(service, requestUrl) {
     upstream.searchParams.set(key, value);
   });
 
-  return { ok: true, url: upstream.toString() };
+  return {
+    ok: true,
+    url: upstream.toString(),
+    requestType: validation.requestType,
+    hasDynamicRenderParams: hasDynamicRenderParams(incoming.searchParams),
+  };
 }
 
 function buildCorsHeaders() {
@@ -140,6 +174,77 @@ function buildUpstreamHeaders(request) {
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36",
   };
+}
+
+function setSharedCacheHeaders(headers, value) {
+  headers.set("Cache-Control", value);
+  headers.set("CDN-Cache-Control", value);
+  headers.set("Vercel-CDN-Cache-Control", value);
+}
+
+function disableSharedCache(headers, reason) {
+  headers.set("Cache-Control", DYNAMIC_CACHE_CONTROL);
+  headers.delete("CDN-Cache-Control");
+  headers.delete("Vercel-CDN-Cache-Control");
+  headers.set("X-GeoServer-Proxy-Cache", reason);
+}
+
+function isImageResponse(headers) {
+  return String(headers.get("content-type") || "").toLowerCase().startsWith("image/");
+}
+
+function applyProxyCacheHeaders(headers, service, requestType, hasDynamicParams = false, upstreamOk = true) {
+  if (!upstreamOk) {
+    disableSharedCache(headers, "bypass-error");
+    return;
+  }
+
+  if (
+    requestType === "getfeatureinfo" ||
+    requestType === "getfeature" ||
+    requestType === "describefeaturetype"
+  ) {
+    disableSharedCache(headers, "bypass-dynamic");
+    return;
+  }
+
+  if (requestType === "gettile") {
+    if (!isImageResponse(headers)) {
+      disableSharedCache(headers, "bypass-non-image");
+      return;
+    }
+
+    setSharedCacheHeaders(headers, hasDynamicParams ? DYNAMIC_TILE_CACHE_CONTROL : WMTS_TILE_CACHE_CONTROL);
+    headers.set("X-GeoServer-Proxy-Cache", "wmts-tile");
+    return;
+  }
+
+  if (requestType === "getmap") {
+    if (!isImageResponse(headers)) {
+      disableSharedCache(headers, "bypass-non-image");
+      return;
+    }
+
+    setSharedCacheHeaders(headers, hasDynamicParams ? DYNAMIC_TILE_CACHE_CONTROL : WMS_TILE_CACHE_CONTROL);
+    headers.set("X-GeoServer-Proxy-Cache", "wms-tile");
+    return;
+  }
+
+  if (requestType === "getlegendgraphic") {
+    if (!isImageResponse(headers)) {
+      disableSharedCache(headers, "bypass-non-image");
+      return;
+    }
+
+    setSharedCacheHeaders(headers, METADATA_CACHE_CONTROL);
+    headers.set("X-GeoServer-Proxy-Cache", "legend");
+    return;
+  }
+
+  if (requestType === "getcapabilities") {
+    setSharedCacheHeaders(headers, METADATA_CACHE_CONTROL);
+    headers.set("X-GeoServer-Proxy-Cache", "metadata");
+  }
 }
 
 export async function OPTIONS() {
@@ -176,9 +281,15 @@ export async function GET(request, context) {
       const value = upstream.headers.get(headerName);
       if (value) headers.set(headerName, value);
     });
+    applyProxyCacheHeaders(
+      headers,
+      service,
+      upstreamTarget.requestType,
+      upstreamTarget.hasDynamicRenderParams,
+      upstream.ok
+    );
 
-    const body = await upstream.arrayBuffer();
-    return new Response(body, {
+    return new Response(upstream.body, {
       status: upstream.status,
       statusText: upstream.statusText,
       headers,

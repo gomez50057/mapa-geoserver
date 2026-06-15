@@ -17,6 +17,10 @@ function collectLeafLayers(node) {
   return out;
 }
 
+function stopCheckboxToggle(event) {
+  event.stopPropagation();
+}
+
 /* === Menú de herramientas (tuerca) — opcional, pero compatible === */
 function ToolsMenu({ id, zCurrent = 400, onZTop, onZUp, onZDown, onZBottom, onZSet }) {
   const [val, setVal] = useState(zCurrent);
@@ -142,7 +146,8 @@ function Node({
                 checked={allOn}
                 ref={(el) => { if (el) el.indeterminate = someOn; }}
                 onChange={(e) => onToggleMany(leafs, e.target.checked)}
-                onClick={(e) => e.stopPropagation()}
+                onClick={stopCheckboxToggle}
+                onMouseDown={stopCheckboxToggle}
                 className={styles.treeCheckbox}
                 title="Activar/Desactivar todas las capas de este grupo"
               />
@@ -181,6 +186,8 @@ function Node({
                   type="checkbox"
                   checked={isOn}
                   onChange={() => onToggle(layer)}
+                  onClick={stopCheckboxToggle}
+                  onMouseDown={stopCheckboxToggle}
                   className={styles.treeCheckbox}
                 />
                 <span>{layer.name}</span>
@@ -214,7 +221,14 @@ function Node({
   const status = layerLoadState[node.id]?.status || "idle";
   return (
     <div className={styles.leaf}>
-      <input type="checkbox" checked={isOn} onChange={() => onToggle(node)} className={styles.treeCheckbox} />
+      <input
+        type="checkbox"
+        checked={isOn}
+        onChange={() => onToggle(node)}
+        onClick={stopCheckboxToggle}
+        onMouseDown={stopCheckboxToggle}
+        className={styles.treeCheckbox}
+      />
       <span>{node.name}</span>
       {isOn && (
         <span className={`${styles.stateBadge} ${styles[`state_${status}`] || ""}`}>

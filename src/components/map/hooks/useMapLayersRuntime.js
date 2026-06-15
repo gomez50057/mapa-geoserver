@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import L from "leaflet";
 import { GEOSERVER_CONFIG } from "@/config/geoserver";
 import { createWmsLayer } from "@/lib/geoserver/client";
 import { extendUnionBounds, resolveLayerBounds } from "@/lib/geoserver/runtime";
@@ -81,6 +82,21 @@ function hideLayer(layer) {
   layer.__codexVisible = false;
 }
 
+function invalidateMapSize(map) {
+  if (typeof map?.invalidateSize === "function") {
+    map.invalidateSize({ animate: false });
+  }
+}
+
+function refreshVisibleTileLayers(groupRegistry, visibleIds) {
+  visibleIds.forEach((layerId) => {
+    const layer = groupRegistry.current[layerId];
+    if (typeof layer?.redraw === "function" && layer.__codexVisible !== false) {
+      layer.redraw();
+    }
+  });
+}
+
 async function waitForLayerReady(layer) {
   if (!layer) return;
   if (layer.__codexReady) return;
@@ -125,12 +141,15 @@ export function useMapLayersRuntime({
   layerOpacityMap,
   onLayerStatusChange,
   fallbackBounds = null,
+  focusRequest = null,
 }) {
   const groupRef = useRef({});
   const paneRef = useRef({});
   const boundsRef = useRef({});
   const lastPaneRef = useRef({});
   const lastOnRef = useRef(new Set());
+  const pendingFitIdsRef = useRef(new Set());
+  const processedFocusNonceRef = useRef(null);
   const loadTokenRef = useRef(0);
   const visibleIdsRef = useRef(new Set());
   const readyWaitersRef = useRef(new Set());
@@ -339,6 +358,14 @@ export function useMapLayersRuntime({
       visibleIdsRef.current = currentOn;
       syncMosaicStatus();
       const newLayerIds = [...currentOn].filter((id) => !lastOnRef.current.has(id));
+      const requestedFocusIds =
+        focusRequest?.nonce && focusRequest.nonce !== processedFocusNonceRef.current
+          ? focusRequest.layerIds || []
+          : [];
+
+      newLayerIds.forEach((id) => pendingFitIdsRef.current.add(id));
+      requestedFocusIds.forEach((id) => pendingFitIdsRef.current.add(id));
+      const fitLayerIds = [...pendingFitIdsRef.current].filter((id) => currentOn.has(id));
       let unionBounds = null;
 
       Object.keys(groupRef.current).forEach((id) => {
@@ -395,7 +422,7 @@ export function useMapLayersRuntime({
             onLayerStatusChange(layerDef.id, { status: "loading", message: "Preparando consulta..." });
           }
 
-          if (newLayerIds.includes(layerDef.id) && layerDef.fitOnEnable !== false) {
+          if (fitLayerIds.includes(layerDef.id) && layerDef.fitOnEnable !== false) {
             const bounds = await resolveLayerBounds({
               layerDef,
               boundsCache: boundsRef,
@@ -412,7 +439,7 @@ export function useMapLayersRuntime({
         }
       }
 
-      if (!unionBounds?.isValid?.() && newLayerIds.length > 0 && visibleDefs.length === 1 && fallbackBounds?.isValid?.()) {
+      if (!unionBounds?.isValid?.() && fitLayerIds.length > 0 && visibleDefs.length === 1 && fallbackBounds?.isValid?.()) {
         unionBounds = fallbackBounds;
       }
 
@@ -421,20 +448,40 @@ export function useMapLayersRuntime({
       }
 
       if (unionBounds?.isValid?.()) {
+        const fitMaxZoom = fitLayerIds.length === 1 ? 14 : 13;
+
         try {
+          invalidateMapSize(map);
           map.flyToBounds(unionBounds, {
-            padding: [40, 40],
-            maxZoom: 13,
+            padding: [52, 52],
+            maxZoom: fitMaxZoom,
             duration: 0.7,
           });
+          window.setTimeout(() => {
+            if (mapRef.current !== map) return;
+            invalidateMapSize(map);
+            refreshVisibleTileLayers(groupRef, currentOn);
+          }, 760);
         } catch (error) {
           console.warn("Animated flyToBounds failed, falling back to fitBounds", error);
+          invalidateMapSize(map);
           map.fitBounds(unionBounds, {
-            padding: [40, 40],
-            maxZoom: 13,
+            padding: [52, 52],
+            maxZoom: fitMaxZoom,
             animate: false,
           });
+          window.setTimeout(() => {
+            if (mapRef.current !== map) return;
+            invalidateMapSize(map);
+            refreshVisibleTileLayers(groupRef, currentOn);
+          }, 120);
         }
+
+        fitLayerIds.forEach((id) => pendingFitIdsRef.current.delete(id));
+      }
+
+      if (requestedFocusIds.length > 0 && focusRequest?.nonce) {
+        processedFocusNonceRef.current = focusRequest.nonce;
       }
 
       lastOnRef.current = currentOn;
@@ -457,6 +504,7 @@ export function useMapLayersRuntime({
     onLayerStatusChange,
     resetTileLayerProgress,
     syncMosaicStatus,
+    focusRequest,
     visibleDefs,
     zMap,
   ]);
@@ -467,6 +515,8 @@ export function useMapLayersRuntime({
     boundsRef.current = {};
     lastPaneRef.current = {};
     lastOnRef.current = new Set();
+    pendingFitIdsRef.current = new Set();
+    processedFocusNonceRef.current = null;
     visibleIdsRef.current = new Set();
     readyWaitersRef.current = new Set();
     tileStateRef.current = {};

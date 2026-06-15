@@ -14,12 +14,44 @@ Abre http://localhost:3000
 ## Variables de entorno
 ```bash
 NEXT_PUBLIC_GEOSERVER_WMS_URL=/api/geoserver/wms
+NEXT_PUBLIC_GEOSERVER_TILE_WMS_URL=/api/geoserver/tilewms
+NEXT_PUBLIC_GEOSERVER_WMTS_URL=/api/geoserver/wmts
+NEXT_PUBLIC_GEOSERVER_TILE_SERVICE=wms
+NEXT_PUBLIC_GEOSERVER_TILE_CACHE_KEY=tiles-20260612-1
+NEXT_PUBLIC_GEOSERVER_WMTS_MATRIX_SET=EPSG:900913
+NEXT_PUBLIC_GEOSERVER_WMTS_TILE_MATRIX_PREFIX=EPSG:900913
+NEXT_PUBLIC_GEOSERVER_WMTS_FORMAT=image/png
 NEXT_PUBLIC_GEOSERVER_WFS_URL=/api/geoserver/wfs
 NEXT_PUBLIC_GEOSERVER_WORKSPACE=mapa
 NEXT_PUBLIC_ENABLE_LOCAL_LAYER_FALLBACK=false
+NEXT_PUBLIC_GEOSERVER_FEATURE_INFO_TIMEOUT_MS=8000
+NEXT_PUBLIC_GEOSERVER_FEATURE_INFO_RETRY_TIMEOUT_MS=14000
+NEXT_PUBLIC_GEOSERVER_HOVER_FEATURE_INFO_TIMEOUT_MS=1600
+NEXT_PUBLIC_GEOSERVER_WFS_TIMEOUT_MS=8000
+NEXT_PUBLIC_GEOSERVER_CLICK_QUERY_BATCH_SIZE=4
 GEOSERVER_REMOTE_WMS_URL=https://metropoli.hidalgo.gob.mx/geoserver/mapa/wms
+GEOSERVER_REMOTE_WMTS_URL=https://metropoli.hidalgo.gob.mx/geoserver/gwc/service/wmts
 GEOSERVER_REMOTE_WFS_URL=https://metropoli.hidalgo.gob.mx/geoserver/mapa/wfs
 ```
+
+## Producción / host
+```bash
+npm ci
+npm run build
+npm start
+```
+
+El proyecto usa `output: 'standalone'`, por eso `npm start` arranca `.next/standalone/server.js`.
+En el host define las URLs públicas de consulta y mosaicos como rutas internas (`/api/geoserver/...`) y deja las URLs remotas solo para el servidor con `GEOSERVER_REMOTE_*`. Así el navegador no depende de llamadas directas cross-origin a GeoServer.
+
+### Rendimiento GeoServer / GeoWebCache
+- Por defecto las capas siguen usando WMS teselado en `/api/geoserver/tilewms` para no cambiar funcionalidad.
+- Cuando una capa ya esté cacheada en GeoWebCache, se puede activar WMTS con `NEXT_PUBLIC_GEOSERVER_TILE_SERVICE=wmts`.
+- Confirma que el gridset de GeoWebCache coincida con Leaflet/WebMercator. Normalmente es `EPSG:900913`; si tu GeoServer usa `EPSG:3857`, ajusta `NEXT_PUBLIC_GEOSERVER_WMTS_MATRIX_SET` y `NEXT_PUBLIC_GEOSERVER_WMTS_TILE_MATRIX_PREFIX`.
+- Mantén WMS para capas con filtros dinámicos, CQL, estilos variables o datos que cambian constantemente.
+- Usa WMTS para capas estáticas, raster, ImageMosaic, polígonos pesados y capas consultadas con frecuencia.
+- El proxy aplica caché fuerte a `GetMap`, `GetTile`, `GetLegendGraphic` y `GetCapabilities`, pero deja `GetFeatureInfo` y WFS sin caché para preservar popups y filtros.
+- Si una capa se ve incompleta por teselas viejas/parciales, cambia `NEXT_PUBLIC_GEOSERVER_TILE_CACHE_KEY` a un valor nuevo y vuelve a compilar para forzar una nueva tanda de teselas cacheadas.
 
 ## Qué incluye
 - Árbol de capas (hasta 4 niveles) con hojas seleccionables.

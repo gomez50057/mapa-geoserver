@@ -127,7 +127,7 @@ export function resolveLayerBehavior(layer, groupPath = []) {
     queryMode: sourceType === "local" ? "none" : "getFeatureInfo",
     hoverMode: sourceType === "local" ? "none" : "getFeatureInfo",
     clickFallbackMode: sourceType === "local" ? "none" : "wfs",
-    boundsMode: layer.boundsMode || "none",
+    boundsMode: layer.boundsMode || (sourceType === "local" ? "none" : "capabilities"),
     fitOnEnable: true,
     popupSchema,
   };

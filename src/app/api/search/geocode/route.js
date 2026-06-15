@@ -2,6 +2,8 @@ import { SEARCH_LIMITS, getSearchBoundingRect, getSearchRegionCenter } from "@/l
 import { normalizeProviderResults } from "@/lib/search/geocoder";
 
 const responseCache = new Map();
+const MAX_CACHE_ENTRIES = 200;
+const GEOCODER_TIMEOUT_MS = 8000;
 
 function clampLimit(value) {
   const numeric = Number(value);
@@ -24,6 +26,11 @@ function readCache(cacheKey) {
 }
 
 function writeCache(cacheKey, payload) {
+  if (responseCache.size >= MAX_CACHE_ENTRIES && !responseCache.has(cacheKey)) {
+    const oldestKey = responseCache.keys().next().value;
+    if (oldestKey) responseCache.delete(oldestKey);
+  }
+
   responseCache.set(cacheKey, {
     payload,
     expiresAt: Date.now() + SEARCH_LIMITS.cacheTtlMs,
@@ -96,12 +103,29 @@ export async function GET(request) {
   }
 
   const requestUrl = buildGeoapifyUrl(query, limit);
-  const response = await fetch(requestUrl, {
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), GEOCODER_TIMEOUT_MS);
+  let response;
+
+  try {
+    response = await fetch(requestUrl, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: abortController.signal,
+    });
+  } catch {
+    return Response.json(
+      {
+        results: [],
+        message: "No fue posible consultar el servicio de búsqueda.",
+      },
+      { status: 502 }
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     return Response.json(

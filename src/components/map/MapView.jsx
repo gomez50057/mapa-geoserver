@@ -23,6 +23,12 @@ import { useMapSearch } from "./hooks/useMapSearch";
 const FALLBACK_BOUNDS = L.latLngBounds(HIDALGO_REGION_BOUNDS[0], HIDALGO_REGION_BOUNDS[1]);
 const clampZ = (z) => Math.max(-9999, Math.min(9999, Math.round(Number(z ?? 400))));
 
+function invalidateMapSize(map) {
+  if (typeof map?.invalidateSize === "function") {
+    map.invalidateSize({ animate: false });
+  }
+}
+
 function getLayerZ(layerDef, zMap) {
   return zMap?.[layerDef.id] ?? layerDef.defaultZ ?? 400;
 }
@@ -54,6 +60,7 @@ export default function MapView({
   layerLoadState = {},
   loadingSummary = null,
   onLayerStatusChange = () => {},
+  focusRequest = null,
   onLayerOpacityChange = () => {},
   onManyLayerOpacityChange = () => {},
   onResetLayers = () => {},
@@ -120,6 +127,7 @@ export default function MapView({
     layerOpacityMap,
     onLayerStatusChange,
     fallbackBounds: FALLBACK_BOUNDS,
+    focusRequest,
   });
 
   const {
@@ -327,6 +335,51 @@ export default function MapView({
     openExportPanel,
     openImportPanel,
   ]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const mapNode = mapDivRef.current;
+    if (!mapReady || !map || !mapNode) return undefined;
+
+    let frameId = 0;
+    const timeoutIds = new Set();
+
+    const scheduleInvalidate = () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        frameId = 0;
+        invalidateMapSize(map);
+      });
+    };
+
+    const scheduleDelayedInvalidate = (delay) => {
+      const timeoutId = window.setTimeout(() => {
+        timeoutIds.delete(timeoutId);
+        scheduleInvalidate();
+      }, delay);
+      timeoutIds.add(timeoutId);
+    };
+
+    scheduleInvalidate();
+    scheduleDelayedInvalidate(180);
+    scheduleDelayedInvalidate(700);
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(scheduleInvalidate)
+        : null;
+    resizeObserver?.observe(mapNode);
+    window.addEventListener("resize", scheduleInvalidate);
+    window.addEventListener("orientationchange", scheduleInvalidate);
+
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", scheduleInvalidate);
+      window.removeEventListener("orientationchange", scheduleInvalidate);
+    };
+  }, [mapReady]);
 
   return (
     <div

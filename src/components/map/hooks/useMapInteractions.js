@@ -16,6 +16,11 @@ function abortControllerRef(controllerRef) {
   controllerRef.current = null;
 }
 
+function removePopupRef(popupRef) {
+  popupRef.current?.remove?.();
+  popupRef.current = null;
+}
+
 export function useMapInteractions({
   mapRef,
   queryableDefs,
@@ -27,6 +32,8 @@ export function useMapInteractions({
   const hoverTimerRef = useRef(null);
   const hoverSeqRef = useRef(0);
   const moveResumeTimerRef = useRef(null);
+  const clickWaitTimerRef = useRef(null);
+  const clickLoadingPopupRef = useRef(null);
   const clickControllerRef = useRef(null);
   const hoverControllerRef = useRef(null);
   const movingRef = useRef(false);
@@ -77,6 +84,8 @@ export function useMapInteractions({
   const cleanupInteractions = useCallback(() => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     if (moveResumeTimerRef.current) clearTimeout(moveResumeTimerRef.current);
+    if (clickWaitTimerRef.current) clearTimeout(clickWaitTimerRef.current);
+    removePopupRef(clickLoadingPopupRef);
     abortControllerRef(clickControllerRef);
     abortControllerRef(hoverControllerRef);
   }, []);
@@ -89,20 +98,51 @@ export function useMapInteractions({
         return;
       }
 
+      if (clickWaitTimerRef.current) {
+        clearTimeout(clickWaitTimerRef.current);
+        clickWaitTimerRef.current = null;
+      }
+      removePopupRef(clickLoadingPopupRef);
       abortControllerRef(clickControllerRef);
       const controller = new AbortController();
       clickControllerRef.current = controller;
-      updateCursor("wait");
+      if (clickWaitTimerRef.current) clearTimeout(clickWaitTimerRef.current);
+      clickWaitTimerRef.current = window.setTimeout(() => {
+        if (clickControllerRef.current === controller) {
+          updateCursor("wait");
+          clickLoadingPopupRef.current = L.popup({
+            maxWidth: 260,
+            closeButton: false,
+            autoPan: false,
+          })
+            .setLatLng(latlng)
+            .setContent("Consultando información...")
+            .openOn(map);
+        }
+      }, 260);
 
       const result = await resolveTopmostFeatureAtLatLng({
         map,
         latlng,
         layers: queryableDefs,
         signal: controller.signal,
+        enableClickFallback: true,
         logErrors: true,
       });
 
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        if (clickWaitTimerRef.current) {
+          clearTimeout(clickWaitTimerRef.current);
+          clickWaitTimerRef.current = null;
+        }
+        removePopupRef(clickLoadingPopupRef);
+        return;
+      }
+      if (clickWaitTimerRef.current) {
+        clearTimeout(clickWaitTimerRef.current);
+        clickWaitTimerRef.current = null;
+      }
+      clickLoadingPopupRef.current = null;
 
       if (result?.feature?.properties && result.layerDef) {
         L.popup({ maxWidth: 420 })
@@ -117,6 +157,21 @@ export function useMapInteractions({
       clickControllerRef.current = null;
     },
     [mapRef, queryableDefs, updateCursor]
+  );
+
+  const flushPendingClick = useCallback(
+    (errorLabel = "Deferred popup query failed") => {
+      if (!pendingClickRef.current) return;
+
+      const latlng = pendingClickRef.current;
+      pendingClickRef.current = null;
+      runPopupQuery(latlng).catch((error) => {
+        if (error?.name !== "AbortError") {
+          console.error(errorLabel, error);
+        }
+      });
+    },
+    [runPopupQuery]
   );
 
   useEffect(() => {
@@ -153,8 +208,8 @@ export function useMapInteractions({
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
       abortControllerRef(hoverControllerRef);
 
-      if (mapBusyRef.current || hoverableDefs.length === 0) {
-        updateCursor(mapBusyRef.current ? "wait" : "grab");
+      if (movingRef.current || hoverableDefs.length === 0) {
+        updateCursor(movingRef.current ? "grabbing" : "grab");
         return;
       }
 
@@ -221,23 +276,9 @@ export function useMapInteractions({
       if (moveResumeTimerRef.current) clearTimeout(moveResumeTimerRef.current);
       moveResumeTimerRef.current = window.setTimeout(() => {
         movingRef.current = false;
-        if (isMosaicUpdating) {
-          mapBusyRef.current = true;
-          updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : "wait");
-          return;
-        }
-
         mapBusyRef.current = false;
         updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : "grab");
-        if (pendingClickRef.current) {
-          const latlng = pendingClickRef.current;
-          pendingClickRef.current = null;
-          runPopupQuery(latlng).catch((error) => {
-            if (error?.name !== "AbortError") {
-              console.error("Deferred popup query failed", error);
-            }
-          });
-        }
+        flushPendingClick();
       }, GEOSERVER_CONFIG.interactionResumeDelayMs);
     };
 
@@ -262,6 +303,7 @@ export function useMapInteractions({
     cleanupInteractions,
     closeContextMenu,
     editingFeatureId,
+    flushPendingClick,
     hoverableDefs,
     isMosaicUpdating,
     mapRef,
@@ -284,9 +326,12 @@ export function useMapInteractions({
 
   useEffect(() => {
     if (movingRef.current) return;
-    mapBusyRef.current = Boolean(isMosaicUpdating);
-    updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : isMosaicUpdating ? "wait" : "grab");
-  }, [activeDrawingTool, editingFeatureId, isMosaicUpdating, updateCursor]);
+    mapBusyRef.current = false;
+    updateCursor(activeDrawingTool || editingFeatureId ? "crosshair" : "grab");
+    if (!activeDrawingTool && !editingFeatureId) {
+      flushPendingClick("Pending popup query after mosaic update failed");
+    }
+  }, [activeDrawingTool, editingFeatureId, flushPendingClick, isMosaicUpdating, updateCursor]);
 
   return {
     mouseCoordinates,
